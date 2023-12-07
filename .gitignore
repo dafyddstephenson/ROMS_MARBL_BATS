@@ -1,0 +1,11 @@
+GLORYS
+OUTPUT
+ERA5
+ROMS_tools
+INPUT/PARTED
+#*
+*~
+*_old
+code/Compile
+code/roms
+roms
