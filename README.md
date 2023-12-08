@@ -19,7 +19,7 @@ conda install -c conda-forge nco ncview
 (Any python packages should also be installed from `conda-forge` to prevent clashes).
 
 2. [MARBL](https://github.com/marbl-ecosys/MARBL/) should be obtained and compiled using this environment (this configuration is working with [`marbl0.45`](https://github.com/marbl-ecosys/MARBL/releases/tag/marbl0.45.0)).
-Checkout the [`development` branch(https://github.com/marbl-ecosys/MARBL/tree/development). In `$MARBL_ROOT/src/Makefile` set `USEMPI=TRUE` and run `make`, which should produce the file `libmarbl-gnu-mpi.a` at `$MARBL_ROOT/lib/`.
+Checkout the [`development` branch](https://github.com/marbl-ecosys/MARBL/tree/development). In `$MARBL_ROOT/src/Makefile` set `USEMPI=TRUE` and run `make`, which should produce the file `libmarbl-gnu-mpi.a` at `$MARBL_ROOT/lib/`.
 
 3. Create a `.ROMS` file in your home directory (this is the convention used in the running scripts contained in this repo), and `source` it so as to set certain environment variables:
 ```
