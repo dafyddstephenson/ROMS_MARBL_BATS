@@ -12,6 +12,9 @@ source ~/.ROMS
 NP_XI=4; # from code/param.opt
 NP_ETA=2;
 
+rm roms
+ln -s code/roms .
+
 ## Check which BGC engine we're using
 if grep -q "\!\# define MARBL" code/cppdefs.opt; 
 then
@@ -26,7 +29,7 @@ cd INPUT/
 mkdir PARTED/
 for X in {\
 roms_bry_2012.nc,roms_bry_bgc_"${PREFIX}".nc,roms_frc.201112.nc,\
-roms_frc.201201.nc,roms_frc_bgc_"${PREFIX}".nc,roms_grd.nc,\
+roms_frc.201201.nc,roms_frc_bgc.nc,roms_grd.nc,\
 roms_ini_"${PREFIX}".nc};do
     if [ -e PARTED/"${X/.nc}".0.nc ];then
 	echo "INPUT/${X} appears to have already been partitioned. Continuing."
