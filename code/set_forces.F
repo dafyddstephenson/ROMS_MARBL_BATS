@@ -1,3 +1,4 @@
+! 20231214, marbl config: only modification is MARBL cpp check
 #include "cppdefs.opt"
 
       subroutine set_forces
@@ -140,7 +141,7 @@ c***              no code here
       if(NT>iTandS) call set_surf_tracer_flx(istr,iend,jstr,jend)
 
       ! BGC surface flux:
-# ifdef BIOLOGY_BEC2
+# if defined(BIOLOGY_BEC2) || defined(MARBL)
       call set_bgc_surf_frc(istr,iend,jstr,jend)
 # endif
 

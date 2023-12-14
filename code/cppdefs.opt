@@ -4,14 +4,13 @@
 /*
  * CHOOSE ONLY ONE PRIMARY FLAG FOR SWITCH LIST BELOW
  */
-# define BEC_SPINDOWN
+# define ROMS_MARBL_BATS
 
 
-#if defined BEC_SPINDOWN
+#if defined ROMS_MARBL_BATS
 /*
    Main switch starts here: model configuration choice.
 */
-
 
    /* grid */
 # define CURVGRID
@@ -65,23 +64,21 @@
 
 #ifdef MARBL
 # define NOX_FORCING
-# define NHY_FORCING 
+# define NHY_FORCING
 #endif
 
-# define BIOLOGY_BEC2
+!# define BIOLOGY_BEC2
+
 #ifdef BIOLOGY_BEC2
 # define BIOLOGY                  /* DPD current does nothing in new code */
 !# define BEC2_DIAG                /* BGC diagnostics */
-# define PCO2AIR_FORCING          /* CO2 forcing */
-
-!# define ANA_BEC_INI              /* ANALYTICAL BEC INITIALIZATION */
-!# define ANA_PAR                  /* Prescribe srflx0 in bgc_ecosys w/out physics feedback */
-   	  			    ! This just sets swrad0 in bgc.opt which is only used in bgc_ecosys_bec2.F
-!# define ANA_BEC_FRC            /* Const. dust, iron, pco2air */
-
 #endif /* BIOLOGY_BEC2 */
 
-# endif
+#if defined(BIOLOGY_BEC2) || defined(MARBL)
+# define PCO2AIR_FORCING
+#endif
+
+#endif /* ROMS_MARBL_BATS */
 
 #include "set_global_definitions.h"
 

@@ -8,7 +8,7 @@
       ! by Pierre Damien to run full pacific models.
 
 #include "cppdefs.opt"
-#ifdef BIOLOGY_BEC2
+#if defined(BIOLOGY_BEC2) || defined(MARBL)
 
       ! param needed for GLOBAL_2D_array to work. NT = number tracer from param
       use param
@@ -88,15 +88,6 @@
 # include "compute_extended_bounds.h"
 #endif
 
-!DANIEL ADD FOR IDEALIZED (ANA_BEC_FRC)
-#ifdef ANA_BEC_FRC
-      dust=dust0
-      iron=iron0
-#ifdef PCO2AIR_FORCING
-      pco2air=pco2air0
-#endif
-      
-#else
       call set_frc_var_tile( istr, iend, jstr, jend, nc_dust,    dust,    interp_frc )  ! dust
       call set_frc_var_tile( istr, iend, jstr, jend, nc_iron,    iron,    interp_frc )  ! iron
 #ifdef PCO2AIR_FORCING
@@ -114,8 +105,6 @@
       !20231027
       call set_frc_var_tile( istr, iend, jstr, jend, nc_nhy, nhy, interp_frc ) !nhy
 #endif /* NHY_FORCING */
-
-#endif /* ANA_BEC_FRC */
 
 #if defined DAILYPAR_PHOTOINHIBITION || defined DAILYPAR_BEC
       ! Daily average Short wave radiation
@@ -606,6 +595,7 @@
       integer omp_get_num_threads
 
       if (wrt_his .and. mod(output_period_his,dt) /= 0) then
+         if (mynode==0) print *,'DT',dt,'OUTPUT_PERIOD_HIS',output_period_his
         stop 'ERROR :: bgc.opt - dt not a factor of output_period_his!'
       endif
       if (wrt_avg .and. mod(output_period_avg,dt) /= 0) then
@@ -740,5 +730,5 @@
       end subroutine do_bgc_diags  !]
 
 ! ----------------------------------------------------------------------
-#endif /* BIOLOGY_BEC2 - entire module */
+#endif /* (BIOLOGY_BEC2) || (MARBL) - entire module */
       end module bgc

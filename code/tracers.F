@@ -78,12 +78,9 @@
 !# include "bgc_tracers_indx.opt"
 !#endif
 
-#ifndef MARBL
-#ifdef BIOLOGY_BEC2      
+#if defined(BIOLOGY_BEC2) && !defined(MARBL)
 # include "bgc_tracers_indx.opt"
 #endif
-#endif
-
       
       public set_surf_tracer_flx
       public init_tracers

@@ -1059,20 +1059,18 @@ c??         enddo
 
       enddo     !<-- itrc
 
-# if defined BIOLOGY_BEC2
-# ifdef MARBL
+# if defined(MARBL)
       if (mynode==0) then
       print *, 'doing BGC with MARBL'
       end if
       call marbldrv_column_physics(istr,iend,jstr,jend,t(istr:iend,jstr:jend,:,:,:)) !MARBL, 2023
-# else
+# elif defined(BIOLOGY_BEC2)
       if (mynode==0) then
       print *, 'doing BGC with BEC'
       end if
       
       call ecosys_bec2_tile(istr,iend,jstr,jend) ! BEC, 2014
 # endif      
-#endif
 
 # if defined EW_PERIODIC || defined NS_PERIODIC || defined MPI
       do itrc=1,NT-1,2
