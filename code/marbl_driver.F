@@ -3,6 +3,9 @@
       module marbl_driver
       use param, only: mynode,nt,isalt,itemp 
       use marbl_interface, only: marbl_interface_class
+#ifdef MARBL_DIAGS
+      use MARBL_interface_public_types, only: marbl_diagnostics_type
+#endif      
       use dimensions, only: nz
       use get_bulk_wnd, only : uwnd, vwnd
       use bgc_forces, only: pco2air,pco2air_alt,dust,iron
@@ -20,7 +23,7 @@
       implicit none
 
       type(MARBL_interface_class) :: marbl_instance
-      integer :: i
+      integer :: idx
 
 !     The below are from the MOM driver, will decide if we can do things differently later
       integer,public :: u10_sqr_ind,sss_ind,sst_ind,ifrac_ind,dust_dep_ind,
@@ -28,7 +31,13 @@
 !     Same for these guys
       integer,public :: dustflux_ind,PAR_col_frac_ind,surf_shortwave_ind,potemp_ind,salinity_ind,
      & pressure_ind,fesedflux_ind,o2_scalef_ind,remin_scalef_ind=-1
-      
+
+!     Keeping count of diagnostics:
+      integer, public :: n_marbl_2d_sf_diags
+      integer, public :: n_marbl_3d_sf_diags
+      integer, public :: n_marbl_2d_it_diags
+      integer, public :: n_marbl_3d_it_diags
+      integer, public :: n_marbl_diags
       
 #include "bgc_tracers_indx.opt"
       
@@ -46,7 +55,7 @@
       real    , dimension(nz)                    :: dummy_array
 
       dummy_array(:)=1.0        ! Temporary measure until we can access an allocated Hz,z_w,z_r
-            
+      
       call marbl_instance%init(gcm_num_levels=nz,
      &     gcm_num_PAR_subcols = 1,
      &     gcm_num_elements_surface_flux = 1,
@@ -60,9 +69,9 @@
       call print_marbl_log(marbl_instance%StatusLog)
       call marbl_instance%StatusLog%erase()
         
-      do i=1,size(marbl_instance%tracer_metadata)         
+      do idx=1,size(marbl_instance%tracer_metadata)         
          itot=itot+1
-         select case (trim(marbl_instance%tracer_metadata(i)%short_name))
+         select case (trim(marbl_instance%tracer_metadata(idx)%short_name))
          case('PO4')            ! Phosphate
             iPO4     = itot
          case('NO3')            ! Nitrate
@@ -124,14 +133,14 @@
          case default
             if (mynode==0) then
                print *, 'Receiving non-BEC tracer: ',
-     &              (trim(marbl_instance%tracer_metadata(i)%short_name))
+     &              (trim(marbl_instance%tracer_metadata(idx)%short_name))
             end if
             !cycle
          end select
          
-         t_vname(itot)=trim(marbl_instance%tracer_metadata(i)%short_name)
-         t_lname(itot)=trim(marbl_instance%tracer_metadata(i)%long_name)
-         t_units(itot)=trim(marbl_instance%tracer_metadata(i)%units)
+         t_vname(itot)=trim(marbl_instance%tracer_metadata(idx)%short_name)
+         t_lname(itot)=trim(marbl_instance%tracer_metadata(idx)%long_name)
+         t_units(itot)=trim(marbl_instance%tracer_metadata(idx)%units)
          
          t_tname(itot)=''
          wrt_t     (itot)=.true.
@@ -158,35 +167,35 @@
       if (mynode==0) then 
          print *, 'Here are the SF forcings MARBL requested'
       end if
-      do i=1,size(marbl_instance%surface_flux_forcings)
+      do idx=1,size(marbl_instance%surface_flux_forcings)
          if (mynode==0) then
-            print *, 'var: ', (trim(MARBL_instance%surface_flux_forcings(i)%metadata%varname))
-            print *, 'units:',(trim(MARBL_instance%surface_flux_forcings(i)%metadata%field_units))
+            print *, 'var: ', (trim(MARBL_instance%surface_flux_forcings(idx)%metadata%varname))
+            print *, 'units:',(trim(MARBL_instance%surface_flux_forcings(idx)%metadata%field_units))
          end if
          
-         select case (trim(MARBL_instance%surface_flux_forcings(i)%metadata%varname))
+         select case (trim(MARBL_instance%surface_flux_forcings(idx)%metadata%varname))
          case('u10_sqr')
-            u10_sqr_ind = i
+            u10_sqr_ind = idx
          case('sss')
-            sss_ind = i
+            sss_ind = idx
          case('sst')
-            sst_ind = i
+            sst_ind = idx
          case('Ice Fraction')
-            ifrac_ind = i
+            ifrac_ind = idx
          case('Dust Flux')
-            dust_dep_ind = i
+            dust_dep_ind = idx
          case('Iron Flux')
-            fe_dep_ind = i
+            fe_dep_ind = idx
          case('NOx Flux')
-            nox_flux_ind = i
+            nox_flux_ind = idx
          case('NHy Flux')
-            nhy_flux_ind = i
+            nhy_flux_ind = idx
          case('Atmospheric Pressure')
-            atmpress_ind = i
+            atmpress_ind = idx
          case('xco2')
-            xco2_ind = i
+            xco2_ind = idx
          case('xco2_alt_co2')
-            xco2_alt_ind = i
+            xco2_alt_ind = idx
          case DEFAULT
             print *, 'default'
          end select
@@ -199,33 +208,33 @@
          print *, 'Here are the int. tend. forcings MARBL requested'
       end if
       
-      do i=1,size(MARBL_instance%interior_tendency_forcings)
+      do idx=1,size(MARBL_instance%interior_tendency_forcings)
     ! i. Check to see if this is a tracer restoring field or timescale
     ! ii. If not, should be one of the following:  
          if (mynode==0) then
-            print *,'var: '  ,(trim(MARBL_instance%interior_tendency_forcings(i)%metadata%varname))
-            print *,'units: ',(trim(MARBL_instance%interior_tendency_forcings(i)%metadata%field_units))            
+            print *,'var: '  ,(trim(MARBL_instance%interior_tendency_forcings(idx)%metadata%varname))
+            print *,'units: ',(trim(MARBL_instance%interior_tendency_forcings(idx)%metadata%field_units))            
          end if
    
-         select case (trim(MARBL_instance%interior_tendency_forcings(i)%metadata%varname))
+         select case (trim(MARBL_instance%interior_tendency_forcings(idx)%metadata%varname))
          case('Dust Flux')
-            dustflux_ind = i
+            dustflux_ind = idx
          case('PAR Column Fraction')
-            PAR_col_frac_ind = i
+            PAR_col_frac_ind = idx
          case('Surface Shortwave')
-            surf_shortwave_ind = i
+            surf_shortwave_ind = idx
          case('Potential Temperature')
-            potemp_ind = i
+            potemp_ind = idx
          case('Salinity')
-            salinity_ind = i
+            salinity_ind = idx
          case('Pressure')
-            pressure_ind = i
+            pressure_ind = idx
          case('Iron Sediment Flux')
-            fesedflux_ind = i
+            fesedflux_ind = idx
          case('O2 Consumption Scale Factor')
-            o2_scalef_ind = i
+            o2_scalef_ind = idx
          case('Particulate Remin Scale Factor')
-            remin_scalef_ind = i
+            remin_scalef_ind = idx
          case DEFAULT
             print *,'default'
          end select
@@ -233,8 +242,113 @@
 
       end subroutine marbldrv_configure_tracers
 
+#ifdef MARBL_DIAGS
+      subroutine marbldrv_configure_diagnostics(
+     &     vname_bec2_diag_2d,vname_bec2_diag_3d,
+     &     wrt_bec2_diag_2d,wrt_bec2_diag_3d)
 
-      subroutine marbldrv_column_physics(istr,iend,jstr,jend,tracer_array)
+      character*72, dimension(:,:), intent(inout) :: vname_bec2_diag_2d
+      character*72, dimension(:,:), intent(inout) :: vname_bec2_diag_3d
+      logical,      dimension(:),   intent(inout) :: wrt_bec2_diag_2d
+      logical,      dimension(:),   intent(inout) :: wrt_bec2_diag_3d
+      integer :: m,idx2d,idx3d
+      ! ---------------------------------------------
+      n_marbl_2d_sf_diags=0
+      n_marbl_3d_sf_diags=0
+      n_marbl_2d_it_diags=0
+      n_marbl_3d_it_diags=0
+      n_marbl_diags=0
+      idx2d=1
+      idx3d=1
+      
+      if (mynode==0)  print *, 'MARBL SURFACE FLUX DIAGNOSTICS'
+      do m=1,size(MARBL_instance%surface_flux_diags%diags)
+         n_marbl_diags=n_marbl_diags+1
+         if (trim(MARBL_instance%surface_flux_diags%diags(m)%vertical_grid) .eq. "none") then ! 2D field
+            n_marbl_2d_sf_diags=n_marbl_2d_sf_diags+1
+            
+            vname_bec2_diag_2d(1,idx2d)=
+     &           trim(MARBL_instance%surface_flux_diags%diags(m)%short_name)
+            vname_bec2_diag_2d(2,idx2d)=
+     &           trim(MARBL_instance%surface_flux_diags%diags(m)%long_name)
+            vname_bec2_diag_2d(3,idx2d)=
+     &           trim(MARBL_instance%surface_flux_diags%diags(m)%units)
+            vname_bec2_diag_2d(4,idx2d)='  '
+            wrt_bec2_diag_2d(idx2d)=.true.
+
+            idx2d=idx2d+1
+         else                   ! 3D field
+            ! There are no 3D surface flux diags, this is for generalisation purposes
+            n_marbl_3d_sf_diags=n_marbl_3d_sf_diags+1
+
+            vname_bec2_diag_3d(1,idx3d)=
+     &           trim(MARBL_instance%surface_flux_diags%diags(m)%short_name)
+            vname_bec2_diag_3d(2,idx3d)=
+     &           trim(MARBL_instance%surface_flux_diags%diags(m)%long_name)
+            vname_bec2_diag_3d(3,idx3d)=
+     &           trim(MARBL_instance%surface_flux_diags%diags(m)%units)
+            vname_bec2_diag_3d(4,idx3d)='  '
+            wrt_bec2_diag_3d(idx3d)=.true.
+!
+            idx3d=idx3d+1
+         end if
+      end do
+
+
+      if (mynode==0) print *, 'MARBL INTERIOR TENDENCY DIAGNOSTICS'
+      do m=1,size(MARBL_instance%interior_tendency_diags%diags)
+         n_marbl_diags=n_marbl_diags+1
+         if (trim(MARBL_instance%interior_tendency_diags%diags(m)%vertical_grid) .eq. "none") then ! 2D field
+            n_marbl_2d_it_diags=n_marbl_2d_it_diags+1
+
+            vname_bec2_diag_2d(1,idx2d)=
+     &           trim(MARBL_instance%interior_tendency_diags%diags(m)%short_name)
+            vname_bec2_diag_2d(2,idx2d)=
+     &           trim(MARBL_instance%interior_tendency_diags%diags(m)%long_name)
+            vname_bec2_diag_2d(3,idx2d)=
+     &           trim(MARBL_instance%interior_tendency_diags%diags(m)%units)
+               vname_bec2_diag_2d(4,idx2d)='  '
+               wrt_bec2_diag_2d(idx2d)=.true.
+
+            idx2d=idx2d+1
+         else                   ! 3D field
+            n_marbl_3d_it_diags=n_marbl_3d_it_diags+1
+
+            vname_bec2_diag_3d(1,idx3d)=
+     &           trim(MARBL_instance%interior_tendency_diags%diags(m)%short_name)
+            vname_bec2_diag_3d(2,idx3d)=
+     &           trim(MARBL_instance%interior_tendency_diags%diags(m)%long_name)
+            vname_bec2_diag_3d(3,idx3d)=
+     &            trim(MARBL_instance%interior_tendency_diags%diags(m)%units)
+            vname_bec2_diag_3d(4,idx3d)='  '
+            wrt_bec2_diag_3d(idx3d)=.true.
+
+            idx3d=idx3d+1
+         end if
+      end do
+      if (mynode==0) then
+         print *, 'number of 2D marbl diags', n_marbl_2d_sf_diags+n_marbl_2d_it_diags
+         print *, 'number of 3D marbl diags', n_marbl_3d_sf_diags+n_marbl_3d_it_diags
+      end if
+!     -----------------------------------------------------------------
+! Initialise MARBL diagnostics
+!     In bgc_2Ddiagnostics.opt we have
+!     - this_diags_idx=1 !(e.g.)
+!     - vname_bec2_diag_2d(1,this_diags_idx)='SHORT_NAME'
+!     - vname_bec2_diag_2d(2,this_diags_idx)='LONG_NAME'
+!     - vname_bec2_diag_2d(3,this_diags_idx)='<UNITS>'
+!     - vname_bec2_diag_2d(4,this_diags_idx)='  ' !(just two spaces?)
+!     - wrt_bec2_diag_2d(this_diags_idx) = .false. ! (choosing whether to write)
+!     -----------------------------------------------------------------
+      
+      end subroutine marbldrv_configure_diagnostics
+#endif /* MARBL_DIAGS */
+      
+      subroutine marbldrv_column_physics(istr,iend,jstr,jend,tracer_array
+#ifdef MARBL_DIAGS      
+     &     ,diag_array_2d,diag_array_3d
+#endif      
+     &) 
 
 
 ! Still TODO
@@ -244,7 +358,9 @@
       
       integer, intent(in) ::  istr,jstr,iend,jend
       real, dimension(:,:,:,:,:), intent(inout) :: tracer_array
-      integer :: i,j,k,m
+      real, dimension(:,:,:), intent(inout) :: diag_array_2d
+      real, dimension(:,:,:,:), intent(inout) :: diag_array_3d
+      integer :: i,j,k,m,idx2d,idx3d
       integer :: nt_marbl ! number of marbl tracers
       logical :: sf_verb = .true. ! Print example SF values to stdout during loop
       integer :: tmpind ! a placeholder index for lazy code copypaste
@@ -413,6 +529,35 @@
             call print_marbl_log(marbl_instance%StatusLog)            
             call marbl_instance%StatusLog%erase()
                
+!     ################################################################################
+!     POPULATE DIAGNOSTICS ARRAY
+#ifdef MARBL_DIAGS
+            idx2d=1
+            idx3d=1
+            do m=1,size(MARBL_instance%surface_flux_diags%diags)
+               if (trim(MARBL_instance%surface_flux_diags%diags(m
+     &              )%vertical_grid) .eq. "none") then ! 2D field
+                  
+!                  if ((mynode==0) .and. (i==1) .and. (j==1) )
+!     &                 print *, 'SF DIAG 2D ',idx2d,
+!     &                 trim(MARBL_instance%surface_flux_diags%diags(m)%short_name)
+!                  
+                  diag_array_2d(i,j,idx2d)=
+     &                 real(MARBL_instance%surface_flux_diags%diags(m)%field_2d(1))
+                  idx2d=idx2d+1
+               else             ! 3D field
+
+!                  if ((mynode==0) .and. (i==1) .and. (j==1) )
+!     &                 print *, 'SF DIAG 3D ',idx3d,
+!     &                 trim(MARBL_instance%surface_flux_diags%diags(m)%short_name)                  
+                  
+                  diag_array_3d(i,j,:,idx3d)=
+     &                 real(MARBL_instance%surface_flux_diags%diags(m)%field_3d(1,:))
+                  idx3d=idx3d+1
+               end if
+            end do
+            if (mynode==0) print *, 'IN MCP, populated SF diag arrays'             
+#endif       
            
             
             
@@ -587,6 +732,37 @@
      &              marbl_instance%interior_tendencies(m,nz:1:-1)*dt
             end do 
            
+!     ################################################################################
+!     POPULATE DIAGNOSTICS ARRAY
+#ifdef MARBL_DIAGS
+            idx2d=n_marbl_2d_sf_diags+1
+            idx3d=n_marbl_3d_sf_diags+1
+            
+            do m=1,size(MARBL_instance%interior_tendency_diags%diags)
+               if (trim(MARBL_instance%interior_tendency_diags%diags(m
+     &              )%vertical_grid) .eq. "none") then ! 2D field
+
+!                  if ((mynode==0) .and. (i==1) .and. (j==1) )
+!     &                 print *, 'IT DIAG 2D ',idx2d,
+!     &                 trim(MARBL_instance%interior_tendency_diags%diags(m)%short_name)
+                  
+                  diag_array_2d(i,j,idx2d)=
+     &                 real(MARBL_instance%interior_tendency_diags%diags(m)%field_2d(1))
+                  idx2d=idx2d+1
+               else             ! 3D field
+
+!                  if ((mynode==0) .and. (i==1) .and. (j==1) )
+!     &                 print *, 'IT DIAG 3D ',idx3d,
+!     &                 trim(MARBL_instance%interior_tendency_diags%diags(m)%short_name)
+
+                  diag_array_3d(i,j,:,idx3d)=
+     &                 real(MARBL_instance%interior_tendency_diags%diags(m)%field_3d(:,1))
+                  idx3d=idx3d+1
+               end if
+            end do
+#endif       
+
+
             
          end do                 !j=jstr,jend
       end do                    ! i=istr,iend

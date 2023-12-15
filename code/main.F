@@ -479,7 +479,7 @@ C$OMP END MASTER
 
       if (do_random) call wrt_random
 
-#if (defined BIOLOGY_BEC2 && defined BEC2_DIAG) 
+#if (defined BIOLOGY_BEC2 && defined BEC2_DIAG) || (defined MARBL && defined MARBL_DIAGS)
       call do_bgc_diags
 #endif /* BIOLOGY_BEC2 */
 

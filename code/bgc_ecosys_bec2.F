@@ -177,7 +177,7 @@
 # endif
 
        XKW(istr:iend,jstr:jend) = a * WS_USED(istr:iend,jstr:jend)*WS_USED(istr:iend,jstr:jend)
-# ifdef BEC2_DIAG
+# if defined(BEC2_DIAG) && !defined(MARBL_DIAGS)
        if (wrt_bec2_diag_2d(ws10m_idx_t)) then
           idiag = idx_bec2_diag_2d(ws10m_idx_t)
           bec2_diag_2d(istr:iend,jstr:jend,idiag) = WS_USED(istr:iend,jstr:jend)
@@ -197,7 +197,7 @@
           AP_USED(istr:iend,jstr:jend) = c1
        END WHERE
 
-# ifdef BEC2_DIAG
+#if defined(BEC2_DIAG) && !defined(MARBL_DIAGS)
        if (wrt_bec2_diag_2d(xkw_idx_t)) then
           idiag = idx_bec2_diag_2d(xkw_idx_t)
           bec2_diag_2d(istr:iend,jstr:jend,idiag) = XKW(istr:iend,jstr:jend)
@@ -294,7 +294,7 @@
          call CSCHMIDT_N2(SSTT(istr:iend,jstr:jend),
      &     landmask(istr:iend,jstr:jend),SCHMIDT_USED(istr:iend,jstr:jend),
      &     istr,iend,jstr,jend)
-# ifdef BEC2_DIAG
+#if defined(BEC2_DIAG) && !defined(MARBL_DIAGS)
        if (wrt_bec2_diag_2d(schmidt_n2_idx_t)) then
           idiag = idx_bec2_diag_2d(schmidt_n2_idx_t)
           bec2_diag_2d(istr:iend,jstr:jend,idiag) = SCHMIDT_USED(istr:iend,jstr:jend)
@@ -319,7 +319,7 @@
                STF(i,j,n2_ind_t) = FLUX(i,j)
                tracer(i,j,N,n2_ind_t) = tracer(i,j,N,n2_ind_t)+
      &                 stf(i,j,n2_ind_t)*dt/Hz(i,j,N)
-# ifdef BEC2_DIAG
+#if defined(BEC2_DIAG) && !defined(MARBL_DIAGS)
        if (wrt_bec2_diag_2d(pvn2_idx_t)) then
           idiag = idx_bec2_diag_2d(pvn2_idx_t)
           bec2_diag_2d(i,j,idiag) = PV(i,j)
@@ -346,7 +346,7 @@
          call CSCHMIDT_O2(SSTT(istr:iend,jstr:jend),
      &     landmask(istr:iend,jstr:jend),SCHMIDT_USED(istr:iend,jstr:jend),
      &     istr,iend,jstr,jend)
-# ifdef BEC2_DIAG
+#if defined(BEC2_DIAG) && !defined(MARBL_DIAGS)
        if (wrt_bec2_diag_2d(schmidto2_idx_t)) then
           idiag = idx_bec2_diag_2d(schmidto2_idx_t)
           bec2_diag_2d(istr:iend,jstr:jend,idiag) = SCHMIDT_USED(istr:iend,jstr:jend)
@@ -369,7 +369,7 @@
                STF(i,j,o2_ind_t) = FLUX(i,j)
                tracer(i,j,N,o2_ind_t) = tracer(i,j,N,o2_ind_t)+
      &                 stf(i,j,o2_ind_t)*dt/Hz(i,j,N)
-# ifdef BEC2_DIAG
+#if defined(BEC2_DIAG) && !defined(MARBL_DIAGS)
        if (wrt_bec2_diag_2d(pvo2_idx_t)) then
           idiag = idx_bec2_diag_2d(pvo2_idx_t)
           bec2_diag_2d(i,j,idiag) = PV(i,j)
@@ -395,7 +395,7 @@
      &       landmask(istr:iend,jstr:jend),
      &       SCHMIDT_USED(istr:iend,jstr:jend),
      &       istr,iend,jstr,jend)
-# ifdef BEC2_DIAG
+#if defined(BEC2_DIAG) && !defined(MARBL_DIAGS)
        if (wrt_bec2_diag_2d(schmidtco2_idx_t)) then
           idiag = idx_bec2_diag_2d(schmidtco2_idx_t)
           bec2_diag_2d(istr:iend,jstr:jend,idiag) = SCHMIDT_USED(istr:iend,jstr:jend)
@@ -408,7 +408,7 @@
 # ifdef MASKING
      &                      * rmask(i,j)
 # endif
-# ifdef BEC2_DIAG
+#if defined(BEC2_DIAG) && !defined(MARBL_DIAGS)
        if (wrt_bec2_diag_2d(pvco2_idx_t)) then
           idiag = idx_bec2_diag_2d(pvco2_idx_t)
           bec2_diag_2d(i,j,idiag) = PV(i,j)
@@ -443,7 +443,7 @@
      &         DpCO2_ROW(istr:iend),istr,iend)
 
              ph_srf(istr:iend,j) = PH_NEW(istr:iend)
-#  ifdef BEC2_DIAG
+#  if defined(BEC2_DIAG) && !defined(MARBL_DIAGS)
         if (wrt_bec2_diag_2d(ph_idx_t)) then
            idiag = idx_bec2_diag_2d(ph_idx_t)
            bec2_diag_2d(istr:iend,j,idiag) = PH_NEW(istr:iend)
@@ -475,7 +475,7 @@
      &       tracer(istr:iend,jstr:jend,N,dic_ind_t) +
      &       stf(istr:iend,jstr:jend,dic_ind_t)
      &       *dt/Hz(istr:iend,jstr:jend,N)
-# ifdef BEC2_DIAG
+#if defined(BEC2_DIAG) && !defined(MARBL_DIAGS)
         if (wrt_bec2_diag_2d(fgco2_idx_t)) then
            idiag = idx_bec2_diag_2d(fgco2_idx_t)
            bec2_diag_2d(istr:iend,jstr:jend,idiag) = FLUX(istr:iend,jstr:jend)
@@ -516,7 +516,7 @@
      &         *dt/Hz(istr:iend,jstr:jend,N)
 # endif
 
-# ifdef BEC2_DIAG
+#if defined(BEC2_DIAG) && !defined(MARBL_DIAGS)
        if (wrt_bec2_diag_2d(ironflux_idx_t)) then
           idiag = idx_bec2_diag_2d(ironflux_idx_t)
           bec2_diag_2d(istr:iend,jstr:jend,idiag) = FLUX(istr:iend,jstr:jend)
@@ -800,7 +800,7 @@
        N2O_loc = MAX(c0, TRACER(istr:iend,j,k,n2o_ind_t))
 # endif
 
-#ifdef BEC2_DIAG
+#if defined(BEC2_DIAG) && !defined(MARBL_DIAGS)
        if (wrt_bec2_diag_3d(totchl_idx_t)) then
           idiag = idx_bec2_diag_3d(totchl_idx_t)
           bec2_diag_3d(istr:iend,j,k,idiag) = tracer(istr:iend,j,k,spchl_ind_t)
@@ -932,7 +932,7 @@
      &                      / (C_loc(istr:iend,auto_ind) + epsC), QCaCO3_max)
           end if
        end do  ! auto_ind = 1, autotroph_cnt
-# ifdef BEC2_DIAG
+#if defined(BEC2_DIAG) && !defined(MARBL_DIAGS)
        if (wrt_bec2_diag_3d(spqcaco3_idx_t)) then
           idiag = idx_bec2_diag_3d(spqcaco3_idx_t)
           bec2_diag_3d(istr:iend,j,k,idiag) = QCaCO3(istr:iend,sp_ind)
@@ -957,7 +957,7 @@
      &            * rmask(istr:iend,j)
 # endif
 
-# ifdef BEC2_DIAG
+#if defined(BEC2_DIAG) && !defined(MARBL_DIAGS)
        if (wrt_bec2_diag_2d(parinc_idx_t)) then
           idiag = idx_bec2_diag_2d(parinc_idx_t)       
           bec2_diag_2d(istr:iend,j,idiag) = PAR_out(istr:iend)
@@ -987,7 +987,7 @@
 #endif
           PAR_out(i) = PAR_in(i) * exp(-KPARdz(i))
           PAR_lay(i) = PAR_in(i) * (c1 - exp(-KPARdz(i))) / KPARdz(i)
-# ifdef BEC2_DIAG
+#if defined(BEC2_DIAG) && !defined(MARBL_DIAGS)
         if (wrt_bec2_diag_3d(par_idx_t)) then
           idiag = idx_bec2_diag_3d(par_idx_t)
           bec2_diag_3d(i,j,k,idiag) = PAR_lay(i)
@@ -1076,7 +1076,7 @@
           ! constants are defined for DOP!)
           f_nut = min(f_nut, VPtot(istr:iend,auto_ind))
 
-# ifdef BEC2_DIAG
+#if defined(BEC2_DIAG) && !defined(MARBL_DIAGS)
           if (auto_ind == sp_ind) then
              if (wrt_bec2_diag_3d(spfeuptake_idx_t)) then
                 idiag = idx_bec2_diag_3d(spfeuptake_idx_t)
@@ -1110,7 +1110,7 @@
              VSiO3 = SiO3_loc / (SiO3_loc + kSiO3(auto_ind))
              f_nut = min(f_nut, VSiO3)
           endif
-# ifdef BEC2_DIAG
+#if defined(BEC2_DIAG) && !defined(MARBL_DIAGS)
           if (auto_ind == diat_ind) then
              if (wrt_bec2_diag_3d(diatsio3uptake_idx_t)) then
                 idiag = idx_bec2_diag_3d(diatsio3uptake_idx_t)
@@ -1135,7 +1135,7 @@
           PCphoto = PCmax * light_lim
 
           photoC(istr:iend,auto_ind) = PCphoto * C_loc(istr:iend,auto_ind)
-# ifdef BEC2_DIAG
+#if defined(BEC2_DIAG) && !defined(MARBL_DIAGS)
           if (auto_ind == sp_ind) then
              if (wrt_bec2_diag_3d(splightlim_idx_t)) then
                 idiag = idx_bec2_diag_3d(splightlim_idx_t)
@@ -1207,7 +1207,7 @@
              DOP_V(istr:iend,auto_ind) = c0
           end where
           photoFe(istr:iend,auto_ind) = photoC(istr:iend,auto_ind) * gQfe(istr:iend,auto_ind)
-# ifdef BEC2_DIAG
+#if defined(BEC2_DIAG) && !defined(MARBL_DIAGS)
           if (auto_ind == sp_ind) then
              if (wrt_bec2_diag_3d(ironuptakesp_idx_t)) then
                 idiag = idx_bec2_diag_3d(ironuptakesp_idx_t)
@@ -1233,7 +1233,7 @@
 
           if (kSiO3(auto_ind) > c0) then
              photoSi(istr:iend,auto_ind) = photoC(istr:iend,auto_ind) * gQsi(istr:iend,auto_ind)
-# ifdef BEC2_DIAG
+#if defined(BEC2_DIAG) && !defined(MARBL_DIAGS)
              if (auto_ind == diat_ind) then
                 if (wrt_bec2_diag_3d(diatsiuptake_idx_t)) then
                    idiag = idx_bec2_diag_3d(diatsiuptake_idx_t)
@@ -1260,7 +1260,7 @@
           elsewhere
              photoacc(istr:iend,auto_ind) = c0
           end where
-# ifdef BEC2_DIAG
+#if defined(BEC2_DIAG) && !defined(MARBL_DIAGS)
           if (wrt_bec2_diag_3d(spphotoacc_idx_t)) then
              idiag = idx_bec2_diag_3d(spphotoacc_idx_t)
              bec2_diag_3d(istr:iend,j,k,idiag) = photoacc(istr:iend,sp_ind)*Hz(istr:iend,j,k)
@@ -1307,7 +1307,7 @@
           else
              CaCO3_PROD(istr:iend,auto_ind) = c0
           endif
-# ifdef BEC2_DIAG
+#if defined(BEC2_DIAG) && !defined(MARBL_DIAGS)
           if (auto_ind == sp_ind) then
              if (wrt_bec2_diag_3d(caco3prod_idx_t)) then
                 idiag = idx_bec2_diag_3d(caco3prod_idx_t)
@@ -1375,7 +1375,7 @@
           endif
 #endif
 
-# ifdef BEC2_DIAG
+#if defined(BEC2_DIAG) && !defined(MARBL_DIAGS)
           if (auto_ind == diaz_ind) then
              if (wrt_bec2_diag_3d(diaznfix_idx_t)) then
                 idiag = idx_bec2_diag_3d(diaznfix_idx_t)
@@ -1440,7 +1440,7 @@
 
        end do  ! auto_ind = 1, autotroph_cnt
 
-# ifdef BEC2_DIAG
+#if defined(BEC2_DIAG) && !defined(MARBL_DIAGS)
        if (wrt_bec2_diag_3d(grazesp_idx_t)) then
           idiag = idx_bec2_diag_3d(grazesp_idx_t)
           bec2_diag_3d(istr:iend,j,k,idiag) = auto_graze(istr:iend,sp_ind)*Hz(istr:iend,j,k)
@@ -1617,7 +1617,7 @@
        zoo_loss_doc = (c1 - parm_labile_ratio) * (c1 - f_zoo_detr_loc) * zoo_loss
        zoo_loss_dic = parm_labile_ratio * (c1 - f_zoo_detr_loc) * zoo_loss
 
-# ifdef BEC2_DIAG
+#if defined(BEC2_DIAG) && !defined(MARBL_DIAGS)
        if (wrt_bec2_diag_3d(zooloss_idx_t)) then
           idiag = idx_bec2_diag_3d(zooloss_idx_t)
           bec2_diag_3d(istr:iend,j,k,idiag) = zoo_loss*Hz(istr:iend,j,k)
@@ -1635,7 +1635,7 @@
        DOC_prod = zoo_loss_doc + sum(auto_loss_doc, dim=2) + sum(auto_graze_doc, dim=2)
        DON_prod = Q * DOC_prod
        DOP_prod = Qp_zoo_pom * zoo_loss_doc
-# ifdef BEC2_DIAG
+#if defined(BEC2_DIAG) && !defined(MARBL_DIAGS)
        if (wrt_bec2_diag_3d(docprod_idx_t)) then
           idiag = idx_bec2_diag_3d(docprod_idx_t)
           bec2_diag_3d(istr:iend,j,k,idiag) = DOC_prod*Hz(istr:iend,j,k)
@@ -1658,7 +1658,7 @@
           DOFe_prod = DOFe_prod + Qfe(istr:iend,auto_ind) * 
      &    (auto_loss_doc(istr:iend,auto_ind) + auto_graze_doc(istr:iend,auto_ind))
        end do
-# ifdef BEC2_DIAG
+#if defined(BEC2_DIAG) && !defined(MARBL_DIAGS)
        if (wrt_bec2_diag_3d(dofeprod_idx_t)) then
           idiag = idx_bec2_diag_3d(dofeprod_idx_t)
           bec2_diag_3d(istr:iend,j,k,idiag) = DOFe_prod*Hz(istr:iend,j,k)
@@ -1690,7 +1690,7 @@
           DOFe_remin = DOFe_remin * 0.05
           DOP_remin(istr:iend,j) = DOP_remin(istr:iend,j) * 0.05
        end where
-# ifdef BEC2_DIAG
+#if defined(BEC2_DIAG) && !defined(MARBL_DIAGS)
        if (wrt_bec2_diag_3d(docremin_idx_t)) then
           idiag = idx_bec2_diag_3d(docremin_idx_t)
           bec2_diag_3d(istr:iend,j,k,idiag) = DOC_remin*Hz(istr:iend,j,k)
@@ -1719,7 +1719,7 @@
 
        POC_prod = f_zoo_detr_loc * zoo_loss + sum(auto_graze_poc, dim=2)
      &            + sum(auto_agg, dim=2) + sum(auto_loss_poc, dim=2)
-# ifdef BEC2_DIAG
+#if defined(BEC2_DIAG) && !defined(MARBL_DIAGS)
        if (wrt_bec2_diag_3d(pocprod_idx_t)) then
           idiag = idx_bec2_diag_3d(pocprod_idx_t)
           bec2_diag_3d(istr:iend,j,k,idiag) = POC_prod(istr:iend)*Hz(istr:iend,j,k)
@@ -1734,7 +1734,7 @@
        P_CaCO3_prod = ((c1 - f_graze_CaCO3_REMIN) * auto_graze(istr:iend,sp_ind) +
      &                auto_loss(istr:iend,sp_ind) + auto_agg(istr:iend,sp_ind)) * QCaCO3(istr:iend,sp_ind)
 
-# ifdef BEC2_DIAG
+#if defined(BEC2_DIAG) && !defined(MARBL_DIAGS)
        if (wrt_bec2_diag_3d(pcaco3prod_idx_t)) then
           idiag = idx_bec2_diag_3d(pcaco3prod_idx_t)
           bec2_diag_3d(istr:iend,j,k,idiag) = P_CaCO3_prod(istr:iend)*Hz(istr:iend,j,k)
@@ -1754,7 +1754,7 @@
      &          + loss_poc(auto_ind) * auto_loss(istr:iend,auto_ind))
           endif
        end do
-# ifdef BEC2_DIAG
+#if defined(BEC2_DIAG) && !defined(MARBL_DIAGS)
        if (wrt_bec2_diag_3d(sio2prod_idx_t)) then
           idiag = idx_bec2_diag_3d(sio2prod_idx_t)
           bec2_diag_3d(istr:iend,j,k,idiag) = P_SiO2_prod(istr:iend)*Hz(istr:iend,j,k)
@@ -1791,7 +1791,7 @@
      &       * (auto_agg(istr:iend,auto_ind) + auto_graze_poc(istr:iend,auto_ind) 
      &          + auto_loss_poc(istr:iend,auto_ind))
        end do
-# ifdef BEC2_DIAG
+#if defined(BEC2_DIAG) && !defined(MARBL_DIAGS)
        if (wrt_bec2_diag_3d(pironprod_idx_t)) then
           idiag = idx_bec2_diag_3d(pironprod_idx_t)
           bec2_diag_3d(istr:iend,j,k,idiag) = P_iron_prod*Hz(istr:iend,j,k)
@@ -1865,7 +1865,7 @@
                 no2_nh4_yield1 = c0
         end where
 
-# ifdef BEC2_DIAG
+#if defined(BEC2_DIAG) && !defined(MARBL_DIAGS)
       if (wrt_bec2_diag_3d(ammox_idx_t)) then
           idiag = idx_bec2_diag_3d(ammox_idx_t)
           bec2_diag_3d(istr:iend,j,k,idiag) = ammox*Hz(istr:iend,j,k)
@@ -1898,7 +1898,7 @@
           NITRIF = c0
        end where
 
-# ifdef BEC2_DIAG
+#if defined(BEC2_DIAG) && !defined(MARBL_DIAGS)
        if (wrt_bec2_diag_3d(nitrif_idx_t)) then
           idiag = idx_bec2_diag_3d(nitrif_idx_t)
           bec2_diag_3d(istr:iend,j,k,idiag) = NITRIF*Hz(istr:iend,j,k)
@@ -1975,7 +1975,7 @@
                 DENITRIF3 = N2O_loc / dt + ammox * n2o_nh4_yield1 + 0.5 * DENITRIF2
         end where
 
-# ifdef BEC2_DIAG
+#if defined(BEC2_DIAG) && !defined(MARBL_DIAGS)
       if (wrt_bec2_diag_3d(anammox_idx_t)) then
           idiag = idx_bec2_diag_3d(anammox_idx_t)
           bec2_diag_3d(istr:iend,j,k,idiag) = anammox*Hz(istr:iend,j,k)
@@ -2011,7 +2011,7 @@
              restore_no3 = c0
 # endif
 
-# ifdef BEC2_DIAG
+#if defined(BEC2_DIAG) && !defined(MARBL_DIAGS)
        if (wrt_bec2_diag_3d(denitrif_idx_t)) then
           idiag = idx_bec2_diag_3d(denitrif_idx_t)
           bec2_diag_3d(istr:iend,j,k,idiag) = DENITRIF*Hz(istr:iend,j,k)
@@ -2287,7 +2287,7 @@
 # endif
        DTRACER_MODULE(istr:iend,j,k,o2_ind_t) = O2_PRODUCTION - O2_CONSUMPTION
 
-# ifdef BEC2_DIAG
+#if defined(BEC2_DIAG) && !defined(MARBL_DIAGS)
       if (wrt_bec2_diag_3d(o2prod_idx_t)) then
           idiag = idx_bec2_diag_3d(o2prod_idx_t)
           bec2_diag_3d(istr:iend,j,k,idiag) = O2_PRODUCTION*Hz(istr:iend,j,k)
@@ -2499,7 +2499,7 @@
 
        P_CaCO3_sflux_in(istr:iend,j) = P_CaCO3_sflux_out(istr:iend,j)
        P_CaCO3_hflux_in(istr:iend,j) = P_CaCO3_hflux_out(istr:iend,j)
-# ifdef BEC2_DIAG
+#if defined(BEC2_DIAG) && !defined(MARBL_DIAGS)
        if (wrt_bec2_diag_3d(caco3fluxin_idx_t)) then
           idiag = idx_bec2_diag_3d(caco3fluxin_idx_t)
           bec2_diag_3d(istr:iend,j,k,idiag) = P_CaCO3_sflux_in(istr:iend,j)
@@ -2509,7 +2509,7 @@
 
        P_SiO2_sflux_in(istr:iend,j) = P_SiO2_sflux_out(istr:iend,j)
        P_SiO2_hflux_in(istr:iend,j) = P_SiO2_hflux_out(istr:iend,j)
-# ifdef BEC2_DIAG
+#if defined(BEC2_DIAG) && !defined(MARBL_DIAGS)
        if (wrt_bec2_diag_3d(sio2fluxin_idx_t)) then
           idiag = idx_bec2_diag_3d(sio2fluxin_idx_t)
           bec2_diag_3d(istr:iend,j,k,idiag) = P_SiO2_sflux_in(istr:iend,j)
@@ -2519,7 +2519,7 @@
 
        dust_sflux_in(istr:iend,j) = dust_sflux_out(istr:iend,j)
        dust_hflux_in(istr:iend,j) = dust_hflux_out(istr:iend,j)
-# ifdef BEC2_DIAG
+#if defined(BEC2_DIAG) && !defined(MARBL_DIAGS)
        if (wrt_bec2_diag_3d(dustfluxin_idx_t)) then
           idiag = idx_bec2_diag_3d(dustfluxin_idx_t)
           bec2_diag_3d(istr:iend,j,k,idiag) = dust_sflux_in(istr:iend,j)
@@ -2529,7 +2529,7 @@
 
        POC_sflux_in(istr:iend,j) = POC_sflux_out(istr:iend,j)
        POC_hflux_in(istr:iend,j) = POC_hflux_out(istr:iend,j)
-# ifdef BEC2_DIAG
+#if defined(BEC2_DIAG) && !defined(MARBL_DIAGS)
        if (wrt_bec2_diag_3d(pocfluxin_idx_t)) then
           idiag = idx_bec2_diag_3d(pocfluxin_idx_t)
           bec2_diag_3d(istr:iend,j,k,idiag) = POC_sflux_in(istr:iend,j)
@@ -2539,7 +2539,7 @@
 
        P_iron_sflux_in(istr:iend,j) = P_iron_sflux_out(istr:iend,j)
        P_iron_hflux_in(istr:iend,j) = P_iron_hflux_out(istr:iend,j)
-# ifdef BEC2_DIAG
+#if defined(BEC2_DIAG) && !defined(MARBL_DIAGS)
        if (wrt_bec2_diag_3d(pironfluxin_idx_t)) then
           idiag = idx_bec2_diag_3d(pironfluxin_idx_t)
           bec2_diag_3d(istr:iend,j,k,idiag) = P_iron_sflux_in(istr:iend,j)
@@ -2901,7 +2901,7 @@
      &                flux-POC_sed_loss(i,j)*denitrif_C_N)
                endif
 
-#ifdef BEC2_DIAG
+#if defined(BEC2_DIAG) && !defined(MARBL_DIAGS)
        if (wrt_bec2_diag_2d(seddenitrif_idx_t)) then
           idiag = idx_bec2_diag_2d(seddenitrif_idx_t)
           bec2_diag_2d(i,j,idiag) = SED_DENITRIF(i)*dz_loc
@@ -2930,7 +2930,7 @@
      &                (flux - POC_sed_loss(i,j) - (SED_DENITRIF(i)*dz_loc*denitrif_C_N))
               endif
 
-#ifdef BEC2_DIAG
+#if defined(BEC2_DIAG) && !defined(MARBL_DIAGS)
        if (wrt_bec2_diag_2d(otherremin_idx_t)) then
           idiag = idx_bec2_diag_2d(otherremin_idx_t)
           bec2_diag_2d(i,j,idiag) = OTHER_REMIN(i)*dz_loc
@@ -2955,7 +2955,7 @@
 !            else
                 FESEDFLUX(i) = FESEDFLUX(i)*0.001/86400*1.0
 !            endif
-# ifdef BEC2_DIAG
+#if defined(BEC2_DIAG) && !defined(MARBL_DIAGS)
         if (wrt_bec2_diag_2d(fesedflux_idx_t)) then
            idiag = idx_bec2_diag_2d(fesedflux_idx_t)
            bec2_diag_2d(i,j,idiag) = FESEDFLUX(i)
@@ -2973,7 +2973,7 @@
             endif
             P_SiO2_sed_loss(i,j) = flux * parm_BSIbury * P_SiO2_sed_loss(i,j)
 
-# ifdef BEC2_DIAG
+#if defined(BEC2_DIAG) && !defined(MARBL_DIAGS)
         if (wrt_bec2_diag_2d(sio2fluxtosed_idx_t)) then
            idiag = idx_bec2_diag_2d(sio2fluxtosed_idx_t)
            bec2_diag_2d(i,j,idiag) = flux
@@ -2990,7 +2990,7 @@
                P_CaCO3_sed_loss(i,j) = flux
             endif
 
-# ifdef BEC2_DIAG
+#if defined(BEC2_DIAG) && !defined(MARBL_DIAGS)
         if (wrt_bec2_diag_2d(caco3fluxtosed_idx_t)) then
            idiag = idx_bec2_diag_2d(caco3fluxtosed_idx_t)
            bec2_diag_2d(i,j,idiag) = flux
@@ -3038,7 +3038,7 @@
 
             dust_sed_loss(i,j) = dust_sflux_out(i,j) + dust_hflux_out(i,j)
 
-# ifdef BEC2_DIAG
+#if defined(BEC2_DIAG) && !defined(MARBL_DIAGS)
         if (wrt_bec2_diag_2d(pironfluxtosed_idx_t)) then
            idiag = idx_bec2_diag_2d(pironfluxtosed_idx_t)
            bec2_diag_2d(i,j,idiag) = flux
@@ -3076,7 +3076,7 @@
 
        end do  ! i = istr, iend
 
-# ifdef BEC2_DIAG
+#if defined(BEC2_DIAG) && !defined(MARBL_DIAGS)
         if (wrt_bec2_diag_3d(pironremin_idx_t)) then
            idiag = idx_bec2_diag_3d(pironremin_idx_t)
            bec2_diag_3d(istr:iend,j,k,idiag) = P_Iron_remin(istr:iend,j)*dz_loc

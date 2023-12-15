@@ -246,7 +246,7 @@
       end subroutine wrt_bgc_tracers  !]
 
 ! ----------------------------------------------------------------------
-#ifdef BEC2_DIAG
+#if defined(BEC2_DIAG) || defined(MARBL_DIAGS)
       subroutine wrt_bgc_diags(avg)  ![
       implicit none
 
@@ -358,7 +358,7 @@
       ierr=nf90_close(ncid)
 
       end subroutine wrt_bgc_diags  !]
-#endif /* BEC2_DIAG */
+#endif /* BEC2_DIAG || MARBL_DIAGS */
 
 !----------------------------------------------------------------------
       subroutine create_bgc_file(fname,avg)  ![
@@ -386,7 +386,7 @@
       end subroutine create_bgc_file !]
 
 !----------------------------------------------------------------------
-#ifdef BEC2_DIAG
+#if defined(BEC2_DIAG) || defined(MARBL_DIAGS)
       subroutine create_bgc_dia_file(fname,avg)  ![
       implicit none
 
@@ -410,7 +410,7 @@
       ierr = nf90_enddef(ncid)
 
       end subroutine create_bgc_dia_file !]
-#endif /* BEC2_DIAG */
+#endif /* BEC2_DIAG || MARBL_DIAGS */
 
 ! ----------------------------------------------------------------------
       subroutine def_vars_bgc( ncid, avg )  ![
@@ -480,7 +480,7 @@
       end subroutine calc_avg_bgc  !]
 
 ! ----------------------------------------------------------------------
-#ifdef BEC2_DIAG
+#if defined(BEC2_DIAG) || defined(MARBL_DIAGS)
       subroutine calc_avg_dia_bgc  ![
       implicit none
 
@@ -511,10 +511,10 @@
       end do
 
       end subroutine calc_avg_dia_bgc  !]
-#endif /* BEC2_DIAG */
+#endif /* BEC2_DIAG || MARBL_DIAGS */
 
 ! ----------------------------------------------------------------------
-#ifdef BEC2_DIAG
+#if defined(BEC2_DIAG) || defined(MARBL_DIAGS)
       subroutine def_bgc_diag(ncid,avg)  ![
 
       ! Define history/avg file variables for BEC2_DIAG
@@ -533,7 +533,8 @@
       do idiag=1,nr_bec2_diag_2d
         if (wrt_bec2_diag_2d(idiag)) then
           varid = nccreate(ncid,vname_bec2_diag_2d(1,idiag),
-     &            (/'xi_rho ','eta_rho','time   '/),(/xi_rho,eta_rho,0/))
+     &          (/'xi_rho ','eta_rho',
+     &          'time   '/),(/xi_rho,eta_rho,0/))
           ierr = nf90_put_att(ncid,varid,'long_name',vname_bec2_diag_2d(2,idiag))
           ierr = nf90_put_att(ncid,varid,'units',vname_bec2_diag_2d(3,idiag))
         endif
@@ -543,14 +544,15 @@
       do idiag=1,nr_bec2_diag_3d
         if (wrt_bec2_diag_3d(idiag)) then
           varid = nccreate(ncid,vname_bec2_diag_3d(1,idiag),
-     &            (/'xi_rho ','eta_rho','s_rho  ','time   '/),(/xi_rho,eta_rho,N,0/))
+     &          (/'xi_rho ','eta_rho',
+     &          's_rho  ','time   '/),(/xi_rho,eta_rho,N,0/))
           ierr = nf90_put_att(ncid,varid,'long_name',vname_bec2_diag_3d(2,idiag))
           ierr = nf90_put_att(ncid,varid,'units',vname_bec2_diag_3d(3,idiag))
         endif
       enddo
 
       end subroutine def_bgc_diag  !]
-#endif /* BEC2_DIAG */
+#endif /* BEC2_DIAG || MARBL_DIAGS */
 
 ! ----------------------------------------------------------------------
       subroutine init_arrays_bgc_frc  ![
@@ -595,7 +597,6 @@
       integer omp_get_num_threads
 
       if (wrt_his .and. mod(output_period_his,dt) /= 0) then
-         if (mynode==0) print *,'DT',dt,'OUTPUT_PERIOD_HIS',output_period_his
         stop 'ERROR :: bgc.opt - dt not a factor of output_period_his!'
       endif
       if (wrt_avg .and. mod(output_period_avg,dt) /= 0) then
@@ -720,10 +721,10 @@
       subroutine do_bgc_diags  ![
       implicit none
 
-# ifdef BEC2_DIAG      
+# if defined(BEC2_DIAG) || defined(MARBL_DIAGS)
       if (wrt_his_dia) call wrt_bgc_diags(.false.) ! write his data
       if (wrt_avg_dia) call wrt_bgc_diags(.true.) ! write avg data
-# endif /* BEC2_DIAG */
+# endif /* BEC2_DIAG || MARBL_DIAGS*/
 
 !      if (mynode==0) print *,'wrt_bgc diags done'
 

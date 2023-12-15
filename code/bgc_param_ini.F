@@ -512,7 +512,7 @@
       !---------------------------------------------------------------------------
       !   Initialize diagnostic variables:
       !---------------------------------------------------------------------------
-#ifdef BEC2_DIAG
+#if defined(BEC2_DIAG) || defined(MARBL_DIAGS)
       bec2_diag_2d = c0
       bec2_diag_3d = c0
 #  ifdef AVERAGES

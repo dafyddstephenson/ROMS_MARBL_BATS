@@ -6,7 +6,8 @@
 #if defined(BIOLOGY_BEC2) || defined(MARBL)
 
       use param
-      use tracers     ! for iPO4, etc, indices of bgc tracers (formerly in param.h)
+      use tracers               ! for iPO4, etc, indices of bgc tracers (formerly in param.h)
+      use marbl_driver,only: marbldrv_configure_diagnostics
       implicit none
 
       ! tracer: values passed to biological model by ROMS
@@ -16,15 +17,18 @@
       real,allocatable,dimension(:,:,:,:) :: tracer
       real,allocatable,dimension(:,:,:,:) :: DTRACER_MODULE
 
-#ifdef BEC2_DIAG
+#if defined(BEC2_DIAG) || defined(MARBL_DIAGS)
 !
 ! Diagnostic variables appearing in average and history files:
 !
       integer :: nr_bec2_diag_2d, nr_bec2_diag_3d, nr_bec2_diag
       integer :: nr_bec2_wrdiag_2d, nr_bec2_wrdiag_3d, nr_bec2_wrdiag
-
+#ifndef MARBL_DIAGS
       parameter( nr_bec2_diag_3d=103, nr_bec2_diag_2d=37)
-
+#else
+      ! Just hardcoding this for now but will need to obtain it dynamically
+      parameter( nr_bec2_diag_3d=164, nr_bec2_diag_2d=179)
+#endif
       parameter( nr_bec2_diag=nr_bec2_diag_2d+nr_bec2_diag_3d )
       real,allocatable,dimension(:,:,:,:) :: bec2_diag_3d
       real,allocatable,dimension(:,:,:)   :: bec2_diag_2d
@@ -183,14 +187,22 @@
       contains
 
 !----------------------------------------------------------------------
-#ifdef BEC2_DIAG
+#if defined(BEC2_DIAG) || defined(MARBL_DIAGS)
       subroutine find_write_bgc_diag
       implicit none
 
       integer idiag
-
-#include "bgc_2Ddiagnostics.opt"
+#if defined(BEC2_DIAG)
+#include "bgc_2Ddiagnostics.opt" 
 #include "bgc_3Ddiagnostics.opt"
+      
+#elif defined(MARBL_DIAGS)
+      if (mynode==0) print *, 'AT marbldrv_configure_diagnostics'
+      call marbldrv_configure_diagnostics(
+     &     vname_bec2_diag_2d,vname_bec2_diag_3d,
+     &     wrt_bec2_diag_2d,wrt_bec2_diag_3d)
+      if (mynode==0) print *, 'PAST marbldrv_configure_diagnostics'
+#endif 
     
       nr_bec2_wrdiag_2d=0
       do idiag=1,nr_bec2_diag_2d
@@ -230,7 +242,7 @@
       allocate( tracer(GLOBAL_2D_ARRAY,N,ntrc_bio) )
       allocate( DTRACER_MODULE(GLOBAL_2D_ARRAY,N,ntrc_bio) )
 
-#ifdef BEC2_DIAG
+#if defined(BEC2_DIAG) || defined (MARBL_DIAGS)
 
       call find_write_bgc_diag 
    
