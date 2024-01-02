@@ -7,7 +7,8 @@
 
       use param
       use tracers               ! for iPO4, etc, indices of bgc tracers (formerly in param.h)
-      use marbl_driver,only: marbldrv_configure_diagnostics
+      use marbl_driver,only: marbldrv_configure_diagnostics,
+     &                       marbldrv_configure_saved_state
       implicit none
 
       ! tracer: values passed to biological model by ROMS
@@ -99,7 +100,14 @@
 #  endif /* AVERAGES */
 
 #endif /* BEC2_DIAG */
-
+!20231215 adding MARBL saved state variables      
+# ifdef MARBL
+!      integer :: nr_marbl_ss_2d,nr_marbl_ss_3d
+      !character*72 :: vname_marbl_saved_state_2d(4,nr_marbl_ss_2d)
+      !character*72 :: vname_marbl_saved_state_3d(4,nr_marbl_ss_3d)
+!      real,allocatable,dimension(:,:,:,:) :: marbl_saved_state_3d
+!      real,allocatable,dimension(:,:,:) :: marbl_saved_state_2d
+#endif      
       real,allocatable,dimension(:,:) :: ifrac, press
 
       logical,allocatable,dimension(:,:) :: landmask
@@ -197,11 +205,9 @@
 #include "bgc_3Ddiagnostics.opt"
       
 #elif defined(MARBL_DIAGS)
-      if (mynode==0) print *, 'AT marbldrv_configure_diagnostics'
       call marbldrv_configure_diagnostics(
      &     vname_bec2_diag_2d,vname_bec2_diag_3d,
      &     wrt_bec2_diag_2d,wrt_bec2_diag_3d)
-      if (mynode==0) print *, 'PAST marbldrv_configure_diagnostics'
 #endif 
     
       nr_bec2_wrdiag_2d=0
@@ -238,7 +244,10 @@
 !----------------------------------------------------------------------
       subroutine init_arrays_bgc_ecosys_vars  ![
       implicit none
-
+! 20231215 index for marbl saved state arrays      
+#ifdef MARBL
+      integer :: iss
+#endif       
       allocate( tracer(GLOBAL_2D_ARRAY,N,ntrc_bio) )
       allocate( DTRACER_MODULE(GLOBAL_2D_ARRAY,N,ntrc_bio) )
 
@@ -252,13 +261,17 @@
       allocate( bec2_diag_3d_avg(GLOBAL_2D_ARRAY,N,nr_bec2_wrdiag_3d) )
       allocate( bec2_diag_2d_avg(GLOBAL_2D_ARRAY,nr_bec2_wrdiag_2d) )
 #  endif /* AVERAGES */
-
+ 
       if (mynode == 0) then
               write(*,'(7x,A,I3,I3)') 'BGC diags allocation :: ',
      &        nr_bec2_wrdiag_2d, nr_bec2_wrdiag_3d
       endif 
 
 #endif /* BEC2_DIAG */
+#ifdef MARBL      
+!     20231215 - allocate arrays for MARBL saved state
+      call marbldrv_configure_saved_state
+!/20231215
 
       allocate( ifrac(GLOBAL_2D_ARRAY), press(GLOBAL_2D_ARRAY) )
 

@@ -1,10 +1,11 @@
 #include "cppdefs.opt"
 #ifdef MARBL
       module marbl_driver
-      use param, only: mynode,nt,isalt,itemp 
+      use param, only: mynode,nt,isalt,itemp,Lm,Mm
       use marbl_interface, only: marbl_interface_class
 #ifdef MARBL_DIAGS
-      use MARBL_interface_public_types, only: marbl_diagnostics_type
+      use MARBL_interface_public_types, only: marbl_diagnostics_type,
+     &                                        marbl_saved_state_type
 #endif      
       use dimensions, only: nz
       use get_bulk_wnd, only : uwnd, vwnd
@@ -38,6 +39,16 @@
       integer, public :: n_marbl_2d_it_diags
       integer, public :: n_marbl_3d_it_diags
       integer, public :: n_marbl_diags
+!     Saved state variables: (mimicking structure of bgc_ecosys_vars for bec2_diag arrays)
+      integer :: nr_marbl_ss_2d,nr_marbl_ss_3d
+      parameter( nr_marbl_ss_2d=3, nr_marbl_ss_3d=2)
+      real, dimension(GLOBAL_2D_ARRAY,nr_marbl_ss_2d) :: marbl_saved_state_2d
+      real, dimension(GLOBAL_2D_ARRAY,nz,nr_marbl_ss_3d) :: marbl_saved_state_3d      
+      !real,allocatable,dimension(GLOBAL_2D_ARRAY,nr_marbl_ss_2d) :: marbl_saved_state_2d 
+!     real,allocatable,dimension(:,:,:,nr_marbl_ss_3d) :: marbl_saved_state_3d
+      character*72 :: vname_marbl_ss_2d(4,nr_marbl_ss_2d)
+      character*72 :: vname_marbl_ss_3d(4,nr_marbl_ss_3d)   
+      
       
 #include "bgc_tracers_indx.opt"
       
@@ -146,7 +157,7 @@
          wrt_t     (itot)=.true.
          wrt_t_avg (itot)=.true.
          t_ana_frc( itot)=1
-            
+
       end do
 
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -240,8 +251,119 @@
          end select
       enddo
 
+
+      
       end subroutine marbldrv_configure_tracers
 
+      subroutine marbldrv_configure_saved_state
+      integer :: iss,nr_marbl_ss_2d_check,nr_marbl_ss_3d_check
+      integer :: idx2d,idx3d
+      character(len=200) :: ss_varname
+
+      
+      ! Begin by checking whether our hardcoded values match MARBL expectations
+      nr_marbl_ss_2d_check=0
+      nr_marbl_ss_3d_check=0
+!     go through both MARBL saved state types and check if fields are
+!     2d or 3d one by one (calculate nr_marbl_ss_2d,nr_marbl_ss_3d):
+!     2d and 3d surface flux saved state variable count:
+            do iss=1,MARBL_instance%surface_flux_saved_state%saved_state_cnt
+               if (MARBL_instance%surface_flux_saved_state%state(iss)%rank==2)
+     &              then
+                  nr_marbl_ss_2d_check=nr_marbl_ss_2d_check+1
+               elseif (MARBL_instance%surface_flux_saved_state%state(iss)%rank==3)
+     &                 then
+                  nr_marbl_ss_3d_check=nr_marbl_ss_3d_check+1
+               end if
+            end do
+!     2d and 2d interior tendency saved state variable count:
+            do iss=1,MARBL_instance%interior_tendency_saved_state%saved_state_cnt
+               if (MARBL_instance%interior_tendency_saved_state%state(iss)%rank==2)
+     &              then
+                  nr_marbl_ss_2d_check=nr_marbl_ss_2d_check+1
+               elseif (MARBL_instance%interior_tendency_saved_state%state(iss)%rank==3)
+     &                 then
+                  nr_marbl_ss_3d_check=nr_marbl_ss_3d_check+1
+               end if
+            end do
+!     Report error if counts don't match            
+            if (nr_marbl_ss_2d/=nr_marbl_ss_2d_check) then
+               write(*,'(7x,A,I4,A,I4,A)')
+     &              'ERROR: Allocated no. of 2D marbl saved state vars '
+     &              ,nr_marbl_ss_2d,
+     &              ' does not match actual no. expected by MARBL: '
+     &              ,nr_marbl_ss_2d_check
+               error stop 'ERROR reported from MARBL library'
+            elseif (nr_marbl_ss_3d/=nr_marbl_ss_3d_check) then
+               write(*,'(7x,A,I4,A,I4,A)')
+     &              'ERROR: Allocated no. of 3D marbl saved state vars '               
+     &              ,nr_marbl_ss_3d,
+     &              ' does not match actual no. expected by MARBL: '
+     &              ,nr_marbl_ss_3d_check
+               error stop 'ERROR reported from MARBL library'
+            end if
+               
+
+!     Now provide metadata:
+            idx2d=1
+            idx3d=1
+            do iss=1,MARBL_instance%surface_flux_saved_state%saved_state_cnt
+               if (MARBL_instance%surface_flux_saved_state%state(iss)%rank==2)
+     &              then
+                  write(ss_varname, "(2A)")
+     &                 "MARBL_",
+     &                 trim(MARBL_instance%surface_flux_saved_state%state(idx2d)%short_name)
+                  vname_marbl_ss_2d(1,idx2d)=trim(varname_ss)
+                  vname_marbl_ss_2d(2,idx2d)=
+     &                 trim(MARBL_instance%surface_flux_saved_state%state(idx2d)%long_name)
+                  vname_marbl_ss_2d(3,idx2d)=
+     &                 trim(MARBL_instance%surface_flux_saved_state%state(idx2d)%units)
+                  vname_marbl_ss_2d(4,idx2d)='  '
+                  
+                  if (mynode==0) then
+                     print *, 'MARBL 2D SF SAVED STATE VARIABLE ',
+     &                    trim(vname_marbl_ss_2d(1,idx2d)),'  ',
+     &                    trim(vname_marbl_ss_2d(2,idx2d)),'  ',
+     &                    trim(vname_marbl_ss_2d(3,idx2d))
+                  end if
+                  
+                  idx2d=idx2d+1
+                  
+               elseif (MARBL_instance%surface_flux_saved_state%state(iss)%rank==3)
+     &                 then                  
+                  write(ss_varname, "(2A)")
+     &                 "MARBL_",
+     &                 trim(MARBL_instance%surface_flux_saved_state%state(idx3d)%short_name)
+                  vname_marbl_ss_3d(1,idx3d)=trim(varname_ss)
+                  vname_marbl_ss_3d(2,idx3d)=
+     &                 trim(MARBL_instance%surface_flux_saved_state%state(idx3d)%long_name)
+                  vname_marbl_ss_3d(3,idx3d)=
+     &                 trim(MARBL_instance%surface_flux_saved_state%state(idx3d)%units)
+
+
+                  if (mynode==0) then
+                     print *, 'MARBL 3D SF SAVED STATE VARIABLE ',
+     &                    trim(vname_marbl_ss_3d(1,idx3d)),'  ',
+     &                    trim(vname_marbl_ss_3d(2,idx3d)),'  ',
+     &                    trim(vname_marbl_ss_3d(3,idx3d))  
+                  end if
+                  
+                  idx3d=idx3d+1
+               end if
+                  
+
+               
+! No longer need to allocate dynamically as we've fixed their size with parameters 
+!     allocate arrays for 2d and 3d saved state variables      
+            !allocate( marbl_saved_state_2d(GLOBAL_2D_ARRAY,nr_marbl_ss_2d))
+            !allocate( marbl_saved_state_3d(GLOBAL_2D_ARRAY,nz,nr_marbl_ss_3d))
+            if (mynode==0) then
+               write(*,'(7x,A,I4,I4)') 'MARBL saved state allocation ::',
+     &              nr_marbl_ss_2d,nr_marbl_ss_3d !3,2
+            end if
+
+      end subroutine marbldrv_configure_saved_state
+      
 #ifdef MARBL_DIAGS
       subroutine marbldrv_configure_diagnostics(
      &     vname_bec2_diag_2d,vname_bec2_diag_3d,
@@ -347,7 +469,8 @@
       subroutine marbldrv_column_physics(istr,iend,jstr,jend,tracer_array
 #ifdef MARBL_DIAGS      
      &     ,diag_array_2d,diag_array_3d
-#endif      
+#endif
+!     &     ,marbl_saved_state_2d,marbl_saved_state_3d
      &) 
 
 
@@ -360,6 +483,8 @@
       real, dimension(:,:,:,:,:), intent(inout) :: tracer_array
       real, dimension(:,:,:), intent(inout) :: diag_array_2d
       real, dimension(:,:,:,:), intent(inout) :: diag_array_3d
+!      real, dimension(:,:,:), intent(inout) :: marbl_saved_state_2d
+!      real, dimension(:,:,:,:), intent(inout) :: marbl_saved_state_3d      
       integer :: i,j,k,m,idx2d,idx3d
       integer :: nt_marbl ! number of marbl tracers
       logical :: sf_verb = .true. ! Print example SF values to stdout during loop
@@ -498,7 +623,11 @@
 !     --------------------------------------------------------------------------------
 
 !     * surface flux saved state
-            !just set to 0 for now 
+!     just set to 0 for now
+            if (mynode==0) then
+               print *, 'SIZE OF 2D SS ARRAY',size(marbl_saved_state_2d)
+               print *, 'SIZE OF 3D SS ARRAY',size(marbl_saved_state_3d)
+            end if
             do m=1,size(MARBL_instance%surface_flux_saved_state%state)
                if ((mynode==0) .and. (j==jend-1) .and. (i==iend-1)) then
                   print *, 'SF saved state: ',
