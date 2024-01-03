@@ -42,10 +42,10 @@
 !     Saved state variables: (mimicking structure of bgc_ecosys_vars for bec2_diag arrays)
       integer :: nr_marbl_ss_2d,nr_marbl_ss_3d
       parameter( nr_marbl_ss_2d=3, nr_marbl_ss_3d=2)
-      real, dimension(GLOBAL_2D_ARRAY,nr_marbl_ss_2d) :: marbl_saved_state_2d
-      real, dimension(GLOBAL_2D_ARRAY,nz,nr_marbl_ss_3d) :: marbl_saved_state_3d      
-      !real,allocatable,dimension(GLOBAL_2D_ARRAY,nr_marbl_ss_2d) :: marbl_saved_state_2d 
-!     real,allocatable,dimension(:,:,:,nr_marbl_ss_3d) :: marbl_saved_state_3d
+!      real, dimension(GLOBAL_2D_ARRAY,nr_marbl_ss_2d) :: marbl_saved_state_2d
+!      real, dimension(GLOBAL_2D_ARRAY,nz,nr_marbl_ss_3d) :: marbl_saved_state_3d      
+      real,allocatable,dimension(:,:,:  ) :: marbl_saved_state_2d 
+      real,allocatable,dimension(:,:,:,:) :: marbl_saved_state_3d
       character*72 :: vname_marbl_ss_2d(4,nr_marbl_ss_2d)
       character*72 :: vname_marbl_ss_3d(4,nr_marbl_ss_3d)   
       
@@ -313,7 +313,7 @@
                   write(ss_varname, "(2A)")
      &                 "MARBL_",
      &                 trim(MARBL_instance%surface_flux_saved_state%state(idx2d)%short_name)
-                  vname_marbl_ss_2d(1,idx2d)=trim(varname_ss)
+                  vname_marbl_ss_2d(1,idx2d)=trim(ss_varname)
                   vname_marbl_ss_2d(2,idx2d)=
      &                 trim(MARBL_instance%surface_flux_saved_state%state(idx2d)%long_name)
                   vname_marbl_ss_2d(3,idx2d)=
@@ -334,7 +334,7 @@
                   write(ss_varname, "(2A)")
      &                 "MARBL_",
      &                 trim(MARBL_instance%surface_flux_saved_state%state(idx3d)%short_name)
-                  vname_marbl_ss_3d(1,idx3d)=trim(varname_ss)
+                  vname_marbl_ss_3d(1,idx3d)=trim(ss_varname)
                   vname_marbl_ss_3d(2,idx3d)=
      &                 trim(MARBL_instance%surface_flux_saved_state%state(idx3d)%long_name)
                   vname_marbl_ss_3d(3,idx3d)=
@@ -350,13 +350,13 @@
                   
                   idx3d=idx3d+1
                end if
-                  
+            end do    
 
                
 ! No longer need to allocate dynamically as we've fixed their size with parameters 
 !     allocate arrays for 2d and 3d saved state variables      
-            !allocate( marbl_saved_state_2d(GLOBAL_2D_ARRAY,nr_marbl_ss_2d))
-            !allocate( marbl_saved_state_3d(GLOBAL_2D_ARRAY,nz,nr_marbl_ss_3d))
+            allocate( marbl_saved_state_2d(GLOBAL_2D_ARRAY,nr_marbl_ss_2d))
+            allocate( marbl_saved_state_3d(GLOBAL_2D_ARRAY,nz,nr_marbl_ss_3d))
             if (mynode==0) then
                write(*,'(7x,A,I4,I4)') 'MARBL saved state allocation ::',
      &              nr_marbl_ss_2d,nr_marbl_ss_3d !3,2
