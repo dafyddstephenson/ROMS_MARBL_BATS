@@ -32,12 +32,14 @@
       integer,public :: dustflux_ind,PAR_col_frac_ind,surf_shortwave_ind,potemp_ind,salinity_ind,
      & pressure_ind,fesedflux_ind,o2_scalef_ind,remin_scalef_ind=-1
 
+#ifdef MARBL_DIAGS      
 !     Keeping count of diagnostics:
       integer, public :: n_marbl_2d_sf_diags
       integer, public :: n_marbl_3d_sf_diags
       integer, public :: n_marbl_2d_it_diags
       integer, public :: n_marbl_3d_it_diags
       integer, public :: n_marbl_diags
+#endif
       
 #include "bgc_tracers_indx.opt"
       
@@ -358,11 +360,13 @@
       
       integer, intent(in) ::  istr,jstr,iend,jend
       real, dimension(:,:,:,:,:), intent(inout) :: tracer_array
+#ifdef MARBL_DIAGS      
       real, dimension(:,:,:), intent(inout) :: diag_array_2d
       real, dimension(:,:,:,:), intent(inout) :: diag_array_3d
+#endif      
       integer :: i,j,k,m,idx2d,idx3d
       integer :: nt_marbl ! number of marbl tracers
-      logical :: sf_verb = .true. ! Print example SF values to stdout during loop
+      logical :: sf_verb = .false. ! Print example SF values to stdout during loop
       integer :: tmpind ! a placeholder index for lazy code copypaste
       tmpind = 0
 
@@ -387,7 +391,7 @@
             if (sst_ind > 0) then
                marbl_instance%surface_flux_forcings(sst_ind)%field_0d(1)
      &              =tracer_array(i,j,nz,nnew,itemp)
-               call sf_test_print(sst_ind,i,j,istr,iend,jstr,jend)               
+               if (sf_verb) call sf_test_print(sst_ind,i,j,istr,iend,jstr,jend)               
             end if
 !     -------------------------------------------------------------------------------- ifrac
 !     (unitless) - NO ICE IN ROMS SO SET TO 0
@@ -500,7 +504,8 @@
 !     * surface flux saved state
             !just set to 0 for now 
             do m=1,size(MARBL_instance%surface_flux_saved_state%state)
-               if ((mynode==0) .and. (j==jend-1) .and. (i==iend-1)) then
+               if ( (i==1) .and. (j==1)
+     &              .and. (mynode==0) .and. (sf_verb) ) then
                   print *, 'SF saved state: ',
      &                 MARBL_instance%surface_flux_saved_state%state(m)%long_name
                end if               
@@ -511,12 +516,17 @@
 !     ################################################################################
 !     CALL SURFACE_FLUX_COMPUTE()
 
-            if ( (mynode==0) .and. (j==1) .and. (i==1) ) then
+               if ( (i==1) .and. (j==1)
+     &              .and. (mynode==0) .and. (sf_verb) ) then
+               
                print *, "calling surface flux compute..."
             end if
             
             call marbl_instance%surface_flux_compute()
-            if ( (mynode==0) .and. (j==1) .and. (i==1) ) then
+               if ( (i==1) .and. (j==1)
+     &              .and. (mynode==0) .and. (sf_verb) ) then
+               
+               
                print *, "calling surface flux compute... done"
             end if
 
@@ -556,7 +566,6 @@
                   idx3d=idx3d+1
                end if
             end do
-            if (mynode==0) print *, 'IN MCP, populated SF diag arrays'             
 #endif       
            
             
@@ -695,7 +704,8 @@
 !     Currently just set to 0 - TODO
             
             do m=1,size(MARBL_instance%interior_tendency_saved_state%state)
-               if ((mynode==0) .and. (j==1) .and. (i==1)) then
+               if ( (i==1) .and. (j==1)
+     &              .and. (mynode==0) .and. (sf_verb) ) then
                   print *, 'IT saved state: ',
      &                 MARBL_instance%interior_tendency_saved_state%state(m)%long_name
                end if

@@ -16,11 +16,11 @@ rm roms
 ln -s code/roms .
 
 ## Check which BGC engine we're using
-if grep -q "\!\# define MARBL" code/cppdefs.opt; 
+if grep -q "\!\# define BIOLOGY_BEC2" code/cppdefs.opt; 
 then
-    PREFIX=BEC    
-else
     PREFIX=MARBL
+else
+    PREFIX=BEC
 fi
 
 # Split the initial and boundary conditions for use on multiple CPUs (default 8)
@@ -47,7 +47,7 @@ mpirun -n 8 ./roms ./roms.in_"${PREFIX}"_fromscratch
 echo "MAIN RUN DONE"
 echo "########################################################################"
 
-for X in ${PREFIX}_{rst,his,bgc}.*.0.nc; do
+for X in ${PREFIX}_{rst,his,bgc_dia,bgc}.*.0.nc; do
     ncjoin ${X/.0.nc}.?.nc
     if [ -e ${X/.0.nc}.nc ]; then
 	rm ${X/.0.nc}.?.nc

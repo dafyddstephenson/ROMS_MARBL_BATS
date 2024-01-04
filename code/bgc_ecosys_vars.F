@@ -7,7 +7,9 @@
 
       use param
       use tracers               ! for iPO4, etc, indices of bgc tracers (formerly in param.h)
+#ifdef MARBL_DIAGS      
       use marbl_driver,only: marbldrv_configure_diagnostics
+#endif      
       implicit none
 
       ! tracer: values passed to biological model by ROMS
