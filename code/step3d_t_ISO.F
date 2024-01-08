@@ -60,6 +60,7 @@ c--# define CONST_TRACERS
       use tracers
 #ifdef MARBL      
       use marbl_driver, only: marbldrv_column_physics ! 20231023
+      use bgc_ecosys_vars, only: landmask !20240106
 #ifdef MARBL_DIAGS      
       use bgc_ecosys_vars, only: bec2_diag_2d, bec2_diag_3d !20231211
 #endif
@@ -1068,6 +1069,7 @@ c??         enddo
       end if
       call marbldrv_column_physics(istr,iend,jstr,jend,
      &     t(istr:iend,jstr:jend,:,:,:)
+     &     ,landmask(istr:iend,jstr:jend)
 #ifdef MARBL_DIAGS      
      &     ,bec2_diag_2d(istr:iend,jstr:jend,:)
      &     ,bec2_diag_3d(istr:iend,jstr:jend,:,:)

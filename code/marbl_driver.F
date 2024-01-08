@@ -57,7 +57,7 @@
       real    , dimension(nz)                    :: dummy_array
 
       dummy_array(:)=1.0        ! Temporary measure until we can access an allocated Hz,z_w,z_r
-      
+
       call marbl_instance%init(gcm_num_levels=nz,
      &     gcm_num_PAR_subcols = 1,
      &     gcm_num_elements_surface_flux = 1,
@@ -262,7 +262,7 @@
       n_marbl_diags=0
       idx2d=1
       idx3d=1
-      
+
       if (mynode==0)  print *, 'MARBL SURFACE FLUX DIAGNOSTICS'
       do m=1,size(MARBL_instance%surface_flux_diags%diags)
          n_marbl_diags=n_marbl_diags+1
@@ -347,6 +347,7 @@
 #endif /* MARBL_DIAGS */
       
       subroutine marbldrv_column_physics(istr,iend,jstr,jend,tracer_array
+     &     ,landmask
 #ifdef MARBL_DIAGS      
      &     ,diag_array_2d,diag_array_3d
 #endif      
@@ -360,6 +361,7 @@
       
       integer, intent(in) ::  istr,jstr,iend,jend
       real, dimension(:,:,:,:,:), intent(inout) :: tracer_array
+      logical, dimension(      :,:), intent(in)    :: landmask      
 #ifdef MARBL_DIAGS      
       real, dimension(:,:,:), intent(inout) :: diag_array_2d
       real, dimension(:,:,:,:), intent(inout) :: diag_array_3d
@@ -374,6 +376,7 @@
       
       do j=jstr,jend
          do i=istr,iend
+            if ( landmask(i,j) .eqv. .false. ) cycle            
 !     ################################################################################
             ! POPULATE MARBL SURFACE_FLUX_FORCINGS
 !     ################################################################################
@@ -582,6 +585,8 @@
 
       do j=jstr,jend
          do i=istr,iend
+            if (landmask(i,j) .eqv. .false. ) cycle
+            
 !     !i.  update domain
 !     re. interface depth MOM treats first top interface as index 0 so doesn't explicitly store : check ROMS behaviour
             
