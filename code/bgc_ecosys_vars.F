@@ -1,4 +1,3 @@
-! 20231214 - marbl config: only modification is addition of marbl cpp key
       module bgc_ecosys_vars
       ! formerly bgc_ecosys_bec2.h
 
