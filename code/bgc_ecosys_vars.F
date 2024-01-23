@@ -1,4 +1,3 @@
-! 20231214 - marbl config: only modification is addition of marbl cpp key
       module bgc_ecosys_vars
       ! formerly bgc_ecosys_bec2.h
 
@@ -7,8 +6,10 @@
 
       use param
       use tracers               ! for iPO4, etc, indices of bgc tracers (formerly in param.h)
-      use marbl_driver,only: marbldrv_configure_diagnostics,
-     &                       marbldrv_configure_saved_state
+      use marbl_driver,only: marbldrv_configure_saved_state
+#ifdef MARBL_DIAGS      
+     &                      ,marbldrv_configure_diagnostics
+#endif      
       implicit none
 
       ! tracer: values passed to biological model by ROMS
@@ -94,28 +95,28 @@
       character*72 ::  vname_bec2_diag_2d(4,nr_bec2_diag_2d)
       character*72 ::  vname_bec2_diag_3d(4,nr_bec2_diag_3d)
 
-#  ifdef AVERAGES
+#ifdef AVERAGES
       real,allocatable,dimension(:,:,:,:) :: bec2_diag_3d_avg
       real,allocatable,dimension(:,:,:)   :: bec2_diag_2d_avg
-#  endif /* AVERAGES */
+#endif /* AVERAGES */
 
 #endif /* BEC2_DIAG */
 !20231215 adding MARBL saved state variables      
-# ifdef MARBL
+!#ifdef MARBL
 !      integer :: nr_marbl_ss_2d,nr_marbl_ss_3d
       !character*72 :: vname_marbl_saved_state_2d(4,nr_marbl_ss_2d)
       !character*72 :: vname_marbl_saved_state_3d(4,nr_marbl_ss_3d)
 !      real,allocatable,dimension(:,:,:,:) :: marbl_saved_state_3d
 !      real,allocatable,dimension(:,:,:) :: marbl_saved_state_2d
-#endif      
+!#endif      
       real,allocatable,dimension(:,:) :: ifrac, press
 
       logical,allocatable,dimension(:,:) :: landmask
 
       logical :: lsource_sink,lflux_gas_o2, lflux_gas_co2
-#if defined Ncycle_SY
+#ifdef Ncycle_SY
      &  ,lflux_gas_n2o, lflux_gas_n2
-# endif
+#endif
      &  ,liron_flux,ldust_flux
 
 !
@@ -127,7 +128,7 @@
      &        diatc_ind_t, diatfe_ind_t, diatsi_ind_t, diazchl_ind_t, diazc_ind_t, diazfe_ind_t
 #ifdef Ncycle_SY
       integer :: no2_ind_t, n2_ind_t, n2o_ind_t
-# endif
+#endif
 
 !
 ! Parameters related to sinking particles:
@@ -208,7 +209,7 @@
       call marbldrv_configure_diagnostics(
      &     vname_bec2_diag_2d,vname_bec2_diag_3d,
      &     wrt_bec2_diag_2d,wrt_bec2_diag_3d)
-#endif 
+#endif /* BEC2_DIAG */ 
     
       nr_bec2_wrdiag_2d=0
       do idiag=1,nr_bec2_diag_2d
@@ -239,7 +240,7 @@
       enddo
 
       end subroutine find_write_bgc_diag  !]
-#endif /* BEC2_DIAG */
+#endif /* BEC2_DIAG || MARBL_DIAGS */
 
 !----------------------------------------------------------------------
       subroutine init_arrays_bgc_ecosys_vars  ![
@@ -257,10 +258,14 @@
    
       allocate( bec2_diag_3d(GLOBAL_2D_ARRAY,N,nr_bec2_wrdiag_3d) )
       allocate( bec2_diag_2d(GLOBAL_2D_ARRAY,nr_bec2_wrdiag_2d) )
-#  ifdef AVERAGES
+      !20240122
+      if (mynode==0) then
+         print *, 'BEC2_DIAG_2D SHAPE',shape(bec2_diag_2d)
+      end if
+#ifdef AVERAGES
       allocate( bec2_diag_3d_avg(GLOBAL_2D_ARRAY,N,nr_bec2_wrdiag_3d) )
       allocate( bec2_diag_2d_avg(GLOBAL_2D_ARRAY,nr_bec2_wrdiag_2d) )
-#  endif /* AVERAGES */
+#endif /* AVERAGES */
  
       if (mynode == 0) then
               write(*,'(7x,A,I3,I3)') 'BGC diags allocation :: ',
@@ -272,7 +277,7 @@
 !     20231215 - allocate arrays for MARBL saved state
       call marbldrv_configure_saved_state
 !/20231215
-
+#endif 
       allocate( ifrac(GLOBAL_2D_ARRAY), press(GLOBAL_2D_ARRAY) )
 
       allocate( landmask(GLOBAL_2D_ARRAY) )

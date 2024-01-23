@@ -11,7 +11,7 @@
       use get_bulk_wnd, only : uwnd, vwnd
       use bgc_forces, only: pco2air,pco2air_alt,dust,iron
       use surf_flux,  only : srflx
-
+      use nc_read_write
       use scalars,    only : nstp,nnew,dt
 #ifdef NOX_FORCING
       use bgc_forces, only: nox
@@ -256,8 +256,7 @@
       end subroutine marbldrv_configure_tracers
 
       subroutine marbldrv_configure_saved_state
-      integer :: iss,nr_marbl_ss_2d_check,nr_marbl_ss_3d_check
-      integer :: idx2d,idx3d
+      integer :: iss,nr_marbl_ss_2d_check,nr_marbl_ss_3d_check,i,j,k
       character(len=200) :: ss_varname
 
       
@@ -305,65 +304,80 @@
                
 
 !     Now provide metadata:
-            idx2d=1
-            idx3d=1
+            ! surface flux saved state metadata (all 2D variables currently)
             do iss=1,MARBL_instance%surface_flux_saved_state%saved_state_cnt
-               if (MARBL_instance%surface_flux_saved_state%state(iss)%rank==2)
-     &              then
-                  write(ss_varname, "(2A)")
-     &                 "MARBL_",
-     &                 trim(MARBL_instance%surface_flux_saved_state%state(idx2d)%short_name)
-                  vname_marbl_ss_2d(1,idx2d)=trim(ss_varname)
-                  vname_marbl_ss_2d(2,idx2d)=
-     &                 trim(MARBL_instance%surface_flux_saved_state%state(idx2d)%long_name)
-                  vname_marbl_ss_2d(3,idx2d)=
-     &                 trim(MARBL_instance%surface_flux_saved_state%state(idx2d)%units)
-                  vname_marbl_ss_2d(4,idx2d)='  '
-                  
-                  if (mynode==0) then
-                     print *, 'MARBL 2D SF SAVED STATE VARIABLE ',
-     &                    trim(vname_marbl_ss_2d(1,idx2d)),'  ',
-     &                    trim(vname_marbl_ss_2d(2,idx2d)),'  ',
-     &                    trim(vname_marbl_ss_2d(3,idx2d))
-                  end if
-                  
-                  idx2d=idx2d+1
-                  
-               elseif (MARBL_instance%surface_flux_saved_state%state(iss)%rank==3)
-     &                 then                  
-                  write(ss_varname, "(2A)")
-     &                 "MARBL_",
-     &                 trim(MARBL_instance%surface_flux_saved_state%state(idx3d)%short_name)
-                  vname_marbl_ss_3d(1,idx3d)=trim(ss_varname)
-                  vname_marbl_ss_3d(2,idx3d)=
-     &                 trim(MARBL_instance%surface_flux_saved_state%state(idx3d)%long_name)
-                  vname_marbl_ss_3d(3,idx3d)=
-     &                 trim(MARBL_instance%surface_flux_saved_state%state(idx3d)%units)
-
-
-                  if (mynode==0) then
-                     print *, 'MARBL 3D SF SAVED STATE VARIABLE ',
-     &                    trim(vname_marbl_ss_3d(1,idx3d)),'  ',
-     &                    trim(vname_marbl_ss_3d(2,idx3d)),'  ',
-     &                    trim(vname_marbl_ss_3d(3,idx3d))  
-                  end if
-                  
-                  idx3d=idx3d+1
-               end if
-            end do    
-
+               write(ss_varname, "(2A)")
+     &              "MARBL_",
+     &              trim(MARBL_instance%surface_flux_saved_state%state(iss)%short_name)
+               vname_marbl_ss_2d(1,iss)=trim(ss_varname)
+               vname_marbl_ss_2d(2,iss)=
+     &              trim(MARBL_instance%surface_flux_saved_state%state(iss)%long_name)
+               vname_marbl_ss_2d(3,iss)=
+     &              trim(MARBL_instance%surface_flux_saved_state%state(iss)%units)
+               vname_marbl_ss_2d(4,iss)='  '
                
-! No longer need to allocate dynamically as we've fixed their size with parameters 
+               if (mynode==0) then
+                  print *, 'MARBL SF SAVED STATE VARIABLE ',
+     &                 trim(vname_marbl_ss_2d(1,iss)),'  ',
+     &                 trim(vname_marbl_ss_2d(2,iss)),'  ',
+     &                 trim(vname_marbl_ss_2d(3,iss))
+               end if
+               
+            end do
+            ! interior tendency saved state metadata (all 3D variables currently)
+            do iss=1,MARBL_instance%interior_tendency_saved_state%saved_state_cnt
+               write(ss_varname, "(2A)")
+     &              "MARBL_",
+     &              trim(MARBL_instance%interior_tendency_saved_state%state(iss)%short_name)
+               vname_marbl_ss_3d(1,iss)=trim(ss_varname)
+               vname_marbl_ss_3d(2,iss)=
+     &              trim(MARBL_instance%interior_tendency_saved_state%state(iss)%long_name)
+               vname_marbl_ss_3d(3,iss)=
+     &              trim(MARBL_instance%interior_tendency_saved_state%state(iss)%units)
+               
+
+               if (mynode==0) then
+                  print *, 'MARBL IT SAVED STATE VARIABLE ',
+     &                 trim(vname_marbl_ss_3d(1,iss)),'  ',
+     &                 trim(vname_marbl_ss_3d(2,iss)),'  ',
+     &                 trim(vname_marbl_ss_3d(3,iss))  
+               end if
+                  
+            end do
+               
 !     allocate arrays for 2d and 3d saved state variables      
             allocate( marbl_saved_state_2d(GLOBAL_2D_ARRAY,nr_marbl_ss_2d))
             allocate( marbl_saved_state_3d(GLOBAL_2D_ARRAY,nz,nr_marbl_ss_3d))
+            marbl_saved_state_2d(:,:,:)=0.
+            marbl_saved_state_3d(:,:,:,:)=0.
             if (mynode==0) then
                write(*,'(7x,A,I4,I4)') 'MARBL saved state allocation ::',
      &              nr_marbl_ss_2d,nr_marbl_ss_3d !3,2
             end if
-
+            
+            
       end subroutine marbldrv_configure_saved_state
-      
+
+!      subroutine marbldrv_wrt_rst_ss(ncid,start)
+!!     write saved state to restart file
+!!     restart includes bgc tracers for simplicity
+!      implicit none
+!      ! inputs
+!      integer, intent(in) :: ncid
+!      integer,dimension(:),intent(in) :: start
+!      ! local
+!      integer :: iss
+!      do itrc=1,nr_marbl_ss_2d
+!         call ncwrite(ncid,vname_marbl_ss_2d(1,iss),
+!     &        marbl_saved_state_2d(i0:i1,j0:j1,itrc),start)
+!      enddo
+!      do itrc=1,nr_marbl_ss_3d
+!         call ncwrite(ncid,vname_marbl_ss_3d(1,iss),
+!     &        marbl_saved_state_2d(i0:i1,j0:j1,:,itrc),start)
+!      enddo
+!
+!      end subroutine marbldrv_wrt_rst_ss  !]
+
 #ifdef MARBL_DIAGS
       subroutine marbldrv_configure_diagnostics(
      &     vname_bec2_diag_2d,vname_bec2_diag_3d,
@@ -373,15 +387,15 @@
       character*72, dimension(:,:), intent(inout) :: vname_bec2_diag_3d
       logical,      dimension(:),   intent(inout) :: wrt_bec2_diag_2d
       logical,      dimension(:),   intent(inout) :: wrt_bec2_diag_3d
-      integer :: m,idx2d,idx3d
+      integer :: m,diagidx2d,diagidx3d
       ! ---------------------------------------------
       n_marbl_2d_sf_diags=0
       n_marbl_3d_sf_diags=0
       n_marbl_2d_it_diags=0
       n_marbl_3d_it_diags=0
       n_marbl_diags=0
-      idx2d=1
-      idx3d=1
+      diagidx2d=1
+      diagidx3d=1
       
       if (mynode==0)  print *, 'MARBL SURFACE FLUX DIAGNOSTICS'
       do m=1,size(MARBL_instance%surface_flux_diags%diags)
@@ -389,30 +403,30 @@
          if (trim(MARBL_instance%surface_flux_diags%diags(m)%vertical_grid) .eq. "none") then ! 2D field
             n_marbl_2d_sf_diags=n_marbl_2d_sf_diags+1
             
-            vname_bec2_diag_2d(1,idx2d)=
+            vname_bec2_diag_2d(1,diagidx2d)=
      &           trim(MARBL_instance%surface_flux_diags%diags(m)%short_name)
-            vname_bec2_diag_2d(2,idx2d)=
+            vname_bec2_diag_2d(2,diagidx2d)=
      &           trim(MARBL_instance%surface_flux_diags%diags(m)%long_name)
-            vname_bec2_diag_2d(3,idx2d)=
+            vname_bec2_diag_2d(3,diagidx2d)=
      &           trim(MARBL_instance%surface_flux_diags%diags(m)%units)
-            vname_bec2_diag_2d(4,idx2d)='  '
-            wrt_bec2_diag_2d(idx2d)=.true.
+            vname_bec2_diag_2d(4,diagidx2d)='  '
+            wrt_bec2_diag_2d(diagidx2d)=.true.
 
-            idx2d=idx2d+1
+            diagidx2d=diagidx2d+1
          else                   ! 3D field
             ! There are no 3D surface flux diags, this is for generalisation purposes
             n_marbl_3d_sf_diags=n_marbl_3d_sf_diags+1
 
-            vname_bec2_diag_3d(1,idx3d)=
+            vname_bec2_diag_3d(1,diagidx3d)=
      &           trim(MARBL_instance%surface_flux_diags%diags(m)%short_name)
-            vname_bec2_diag_3d(2,idx3d)=
+            vname_bec2_diag_3d(2,diagidx3d)=
      &           trim(MARBL_instance%surface_flux_diags%diags(m)%long_name)
-            vname_bec2_diag_3d(3,idx3d)=
+            vname_bec2_diag_3d(3,diagidx3d)=
      &           trim(MARBL_instance%surface_flux_diags%diags(m)%units)
-            vname_bec2_diag_3d(4,idx3d)='  '
-            wrt_bec2_diag_3d(idx3d)=.true.
+            vname_bec2_diag_3d(4,diagidx3d)='  '
+            wrt_bec2_diag_3d(diagidx3d)=.true.
 !
-            idx3d=idx3d+1
+            diagidx3d=diagidx3d+1
          end if
       end do
 
@@ -423,29 +437,29 @@
          if (trim(MARBL_instance%interior_tendency_diags%diags(m)%vertical_grid) .eq. "none") then ! 2D field
             n_marbl_2d_it_diags=n_marbl_2d_it_diags+1
 
-            vname_bec2_diag_2d(1,idx2d)=
+            vname_bec2_diag_2d(1,diagidx2d)=
      &           trim(MARBL_instance%interior_tendency_diags%diags(m)%short_name)
-            vname_bec2_diag_2d(2,idx2d)=
+            vname_bec2_diag_2d(2,diagidx2d)=
      &           trim(MARBL_instance%interior_tendency_diags%diags(m)%long_name)
-            vname_bec2_diag_2d(3,idx2d)=
+            vname_bec2_diag_2d(3,diagidx2d)=
      &           trim(MARBL_instance%interior_tendency_diags%diags(m)%units)
-               vname_bec2_diag_2d(4,idx2d)='  '
-               wrt_bec2_diag_2d(idx2d)=.true.
+               vname_bec2_diag_2d(4,diagidx2d)='  '
+               wrt_bec2_diag_2d(diagidx2d)=.true.
 
-            idx2d=idx2d+1
+            diagidx2d=diagidx2d+1
          else                   ! 3D field
             n_marbl_3d_it_diags=n_marbl_3d_it_diags+1
 
-            vname_bec2_diag_3d(1,idx3d)=
+            vname_bec2_diag_3d(1,diagidx3d)=
      &           trim(MARBL_instance%interior_tendency_diags%diags(m)%short_name)
-            vname_bec2_diag_3d(2,idx3d)=
+            vname_bec2_diag_3d(2,diagidx3d)=
      &           trim(MARBL_instance%interior_tendency_diags%diags(m)%long_name)
-            vname_bec2_diag_3d(3,idx3d)=
+            vname_bec2_diag_3d(3,diagidx3d)=
      &            trim(MARBL_instance%interior_tendency_diags%diags(m)%units)
-            vname_bec2_diag_3d(4,idx3d)='  '
-            wrt_bec2_diag_3d(idx3d)=.true.
+            vname_bec2_diag_3d(4,diagidx3d)='  '
+            wrt_bec2_diag_3d(diagidx3d)=.true.
 
-            idx3d=idx3d+1
+            diagidx3d=diagidx3d+1
          end if
       end do
       if (mynode==0) then
@@ -470,7 +484,7 @@
 #ifdef MARBL_DIAGS      
      &     ,diag_array_2d,diag_array_3d
 #endif
-!     &     ,marbl_saved_state_2d,marbl_saved_state_3d
+     &     ,marbl_ss_2d,marbl_ss_3d
      &) 
 
 
@@ -481,18 +495,22 @@
       
       integer, intent(in) ::  istr,jstr,iend,jend
       real, dimension(:,:,:,:,:), intent(inout) :: tracer_array
+#ifdef MARBL_DIAGS      
       real, dimension(:,:,:), intent(inout) :: diag_array_2d
       real, dimension(:,:,:,:), intent(inout) :: diag_array_3d
-!      real, dimension(:,:,:), intent(inout) :: marbl_saved_state_2d
-!      real, dimension(:,:,:,:), intent(inout) :: marbl_saved_state_3d      
-      integer :: i,j,k,m,idx2d,idx3d
+      integer :: diagidx2d,diagidx3d
+#endif
+      real, dimension(:,:,:), intent(inout) :: marbl_ss_2d
+      real, dimension(:,:,:,:),intent(inout) :: marbl_ss_3d
+
+      integer :: i,j,k,m
       integer :: nt_marbl ! number of marbl tracers
       logical :: sf_verb = .true. ! Print example SF values to stdout during loop
       integer :: tmpind ! a placeholder index for lazy code copypaste
       tmpind = 0
-
-      nt_marbl=size(marbl_instance%tracer_metadata)
       
+      nt_marbl=size(marbl_instance%tracer_metadata)
+
       do j=jstr,jend
          do i=istr,iend
 !     ################################################################################
@@ -624,18 +642,25 @@
 
 !     * surface flux saved state
 !     just set to 0 for now
-            if (mynode==0) then
-               print *, 'SIZE OF 2D SS ARRAY',size(marbl_saved_state_2d)
-               print *, 'SIZE OF 3D SS ARRAY',size(marbl_saved_state_3d)
-            end if
-            do m=1,size(MARBL_instance%surface_flux_saved_state%state)
-               if ((mynode==0) .and. (j==jend-1) .and. (i==iend-1)) then
-                  print *, 'SF saved state: ',
-     &                 MARBL_instance%surface_flux_saved_state%state(m)%long_name
-               end if               
+!            do m=1,size(MARBL_instance%surface_flux_saved_state%state)
+!               if ((mynode==0) .and. (j==jend-1) .and. (i==iend-1)) then
+!                  print *, 'SF saved state: ',
+!     &                 MARBL_instance%surface_flux_saved_state%state(m)%long_name
+!               end if               
+!               MARBL_instance%surface_flux_saved_state%state(m)%field_2d(1)
+!     &              =0.
+!            enddo
+!     20240117 - Currently all MARBL SF saved state vars are 2D, all IT saved state vars are 3D
+            do m=1,MARBL_instance%surface_flux_saved_state%saved_state_cnt
+               if ( (mynode==0) .and. (j==1) .and. (i==1) ) then
+                  print *, 'POPULATING SF saved state: ',
+     &                 trim(MARBL_instance%surface_flux_saved_state%state(m)%long_name)
+               end if
                MARBL_instance%surface_flux_saved_state%state(m)%field_2d(1)
-     &              =0.
-            enddo
+     &              =marbl_ss_2d(i,j,m) !0.
+            end do
+               
+!/20240117
             
 !     ################################################################################
 !     CALL SURFACE_FLUX_COMPUTE()
@@ -654,35 +679,44 @@
                call marbl_instance%StatusLog%log_error_trace(
      &              "marbl_instance%surface_flux_compute()",
      &              "MARBL_tracers_column_physics")
-            end if 
-            call print_marbl_log(marbl_instance%StatusLog)            
+               call print_marbl_log(marbl_instance%StatusLog,i,j)
+            end if
+
+            !call print_marbl_log(marbl_instance%StatusLog)            
             call marbl_instance%StatusLog%erase()
-               
+
 !     ################################################################################
+!     POPULATE/UPDATE SAVED STATE ARRAY
+!     20240117 - Currently all MARBL SF saved state vars are 2D, all IT saved state vars are 3D
+            do m=1,MARBL_instance%surface_flux_saved_state%saved_state_cnt
+               marbl_ss_2d(i,j,m)=
+     &              MARBL_instance%surface_flux_saved_state%state(m)%field_2d(1)
+            end do
+            
 !     POPULATE DIAGNOSTICS ARRAY
 #ifdef MARBL_DIAGS
-            idx2d=1
-            idx3d=1
+            diagidx2d=1
+            diagidx3d=1
             do m=1,size(MARBL_instance%surface_flux_diags%diags)
                if (trim(MARBL_instance%surface_flux_diags%diags(m
      &              )%vertical_grid) .eq. "none") then ! 2D field
                   
 !                  if ((mynode==0) .and. (i==1) .and. (j==1) )
-!     &                 print *, 'SF DIAG 2D ',idx2d,
+!     &                 print *, 'SF DIAG 2D ',diagidx2d,
 !     &                 trim(MARBL_instance%surface_flux_diags%diags(m)%short_name)
 !                  
-                  diag_array_2d(i,j,idx2d)=
+                  diag_array_2d(i,j,diagidx2d)=
      &                 real(MARBL_instance%surface_flux_diags%diags(m)%field_2d(1))
-                  idx2d=idx2d+1
+                  diagidx2d=diagidx2d+1
                else             ! 3D field
 
 !                  if ((mynode==0) .and. (i==1) .and. (j==1) )
-!     &                 print *, 'SF DIAG 3D ',idx3d,
+!     &                 print *, 'SF DIAG 3D ',diagidx3d,
 !     &                 trim(MARBL_instance%surface_flux_diags%diags(m)%short_name)                  
                   
-                  diag_array_3d(i,j,:,idx3d)=
+                  diag_array_3d(i,j,:,diagidx3d)=
      &                 real(MARBL_instance%surface_flux_diags%diags(m)%field_3d(1,:))
-                  idx3d=idx3d+1
+                  diagidx3d=diagidx3d+1
                end if
             end do
             if (mynode==0) print *, 'IN MCP, populated SF diag arrays'             
@@ -823,14 +857,25 @@
 !     * Interior tendency saved state
 !     Currently just set to 0 - TODO
             
-            do m=1,size(MARBL_instance%interior_tendency_saved_state%state)
-               if ((mynode==0) .and. (j==1) .and. (i==1)) then
-                  print *, 'IT saved state: ',
-     &                 MARBL_instance%interior_tendency_saved_state%state(m)%long_name
-               end if
+!            do m=1,size(MARBL_instance%interior_tendency_saved_state%state)
+!               if ((mynode==0) .and. (j==1) .and. (i==1)) then
+!                  print *, 'IT saved state: ',
+!     &                 MARBL_instance%interior_tendency_saved_state%state(m)%long_name
+!               end if
+!               MARBL_instance%interior_tendency_saved_state%state(m)%field_3d(:,1)
+!     &              =0.
+!            enddo            
+!     20240117 - Currently all MARBL SF saved state vars are 2D, all IT saved state vars are 3D            
+            do m=1,MARBL_instance%interior_tendency_saved_state%saved_state_cnt
+                  if ( (mynode==0) .and. (i==1) .and. (j==1) ) then
+                     print *, 'POPULATING IT saved state: ',
+     &                trim(MARBL_instance%interior_tendency_saved_state%state(m)%long_name)
+                  end if
+               
                MARBL_instance%interior_tendency_saved_state%state(m)%field_3d(:,1)
-     &              =0.
-            enddo            
+     &              =marbl_ss_3d(i,j,nz:1:-1,m) !0.               
+            end do    
+!/20240117
 
 !     * bottom fluxes
             marbl_instance%bot_flux_to_tend(:)=0.
@@ -859,34 +904,40 @@
                tracer_array(i,j,:,nnew, m+(NT-nt_marbl) ) =
      &              tracer_array(i,j,:,nnew, m+(NT-nt_marbl) ) +
      &              marbl_instance%interior_tendencies(m,nz:1:-1)*dt
-            end do 
-           
+            end do
+            
+!     * need to update saved state after IT compute
+            do m=1,MARBL_instance%interior_tendency_saved_state%saved_state_cnt
+               marbl_ss_3d(i,j,:,m)=
+     &             MARBL_instance%interior_tendency_saved_state%state(m)%field_3d(nz:1:-1,1)
+            end do    
+
 !     ################################################################################
 !     POPULATE DIAGNOSTICS ARRAY
 #ifdef MARBL_DIAGS
-            idx2d=n_marbl_2d_sf_diags+1
-            idx3d=n_marbl_3d_sf_diags+1
+            diagidx2d=n_marbl_2d_sf_diags+1
+            diagidx3d=n_marbl_3d_sf_diags+1
             
             do m=1,size(MARBL_instance%interior_tendency_diags%diags)
                if (trim(MARBL_instance%interior_tendency_diags%diags(m
      &              )%vertical_grid) .eq. "none") then ! 2D field
 
 !                  if ((mynode==0) .and. (i==1) .and. (j==1) )
-!     &                 print *, 'IT DIAG 2D ',idx2d,
+!     &                 print *, 'IT DIAG 2D ',diagidx2d,
 !     &                 trim(MARBL_instance%interior_tendency_diags%diags(m)%short_name)
                   
-                  diag_array_2d(i,j,idx2d)=
+                  diag_array_2d(i,j,diagidx2d)=
      &                 real(MARBL_instance%interior_tendency_diags%diags(m)%field_2d(1))
-                  idx2d=idx2d+1
+                  diagidx2d=diagidx2d+1
                else             ! 3D field
 
 !                  if ((mynode==0) .and. (i==1) .and. (j==1) )
-!     &                 print *, 'IT DIAG 3D ',idx3d,
+!     &                 print *, 'IT DIAG 3D ',diagidx3d,
 !     &                 trim(MARBL_instance%interior_tendency_diags%diags(m)%short_name)
 
-                  diag_array_3d(i,j,:,idx3d)=
+                  diag_array_3d(i,j,:,diagidx3d)=
      &                 real(MARBL_instance%interior_tendency_diags%diags(m)%field_3d(:,1))
-                  idx3d=idx3d+1
+                  diagidx3d=diagidx3d+1
                end if
             end do
 #endif       

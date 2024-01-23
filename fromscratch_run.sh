@@ -15,12 +15,12 @@ NP_ETA=2;
 rm roms
 ln -s code/roms .
 
-## Check which BGC engine we're using
-if grep -q "\!\# define MARBL" code/cppdefs.opt; 
+## Check which BGC engine we're using                                                                                                                                                                                                                                                              
+if grep -q "\!\# define BIOLOGY_BEC2" code/cppdefs.opt;
 then
-    PREFIX=BEC    
-else
     PREFIX=MARBL
+else
+    PREFIX=BEC
 fi
 
 # Split the initial and boundary conditions for use on multiple CPUs (default 8)

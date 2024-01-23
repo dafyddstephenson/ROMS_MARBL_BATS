@@ -15,7 +15,7 @@ mess_buffers.o : mess_buffers.F set_global_definitions.h cppdefs.opt scalars.o p
 mixing.o : mixing.F set_global_definitions.h cppdefs.opt tracers.o scalars.o param.o 
 mpi_test_arr.o : mpi_test_arr.F set_global_definitions.h cppdefs.opt param.o 
 private_scratch.o : private_scratch.F set_global_definitions.h cppdefs.opt scalars.o param.o 
-basic_output.o : basic_output.F ocean_vars.opt set_global_definitions.h cppdefs.opt dimensions.o private_scratch.o coupling.o tracers.o grid.o work.o eos_vars.o mixing.o ocean_vars.o scalars.o diagnostics.o sponge_tune.o roms_read_write.o nc_read_write.o param.o 
+basic_output.o : basic_output.F ocean_vars.opt set_global_definitions.h cppdefs.opt dimensions.o private_scratch.o coupling.o tracers.o grid.o work.o eos_vars.o mixing.o ocean_vars.o scalars.o diagnostics.o sponge_tune.o roms_read_write.o nc_read_write.o param.o marbl_driver.o
 scalars.o : scalars.F set_global_definitions.h cppdefs.opt param.o 
 scoord.o : scoord.F set_global_definitions.h cppdefs.opt param.o 
 strings.o : strings.F 
@@ -91,6 +91,6 @@ get_bulk_wnd.o : get_bulk_wnd.F bulk_wnd.opt set_global_definitions.h cppdefs.op
 main.o : main.F set_global_definitions.h cppdefs.opt tides.o surf_flux.o extract_data.o bgc.o bgc_param_ini.o random_output.o particles.o boundary.o diagnostics.o analytical.o grid.o dimensions.o basic_output.o ocean_vars.o scalars.o sponge_tune.o tracers.o param.o 
 checkdims.o : checkdims.F compute_starts_counts.h set_global_definitions.h cppdefs.opt scoord.o nc_read_write.o roms_read_write.o param.o 
 insert_node.o : insert_node.F insert_node.F 
-get_init.o : get_init.F compute_tile_bounds.h set_global_definitions.h cppdefs.opt dimensions.o roms_read_write.o nc_read_write.o sponge_tune.o diagnostics.o bgc_ecosys_vars.o scalars.o basic_output.o ocean_vars.o mixing.o hidden_mpi_vars.o grid.o coupling.o bgc.o tracers.o param.o 
+get_init.o : get_init.F compute_tile_bounds.h set_global_definitions.h cppdefs.opt dimensions.o roms_read_write.o nc_read_write.o sponge_tune.o diagnostics.o bgc_ecosys_vars.o scalars.o basic_output.o ocean_vars.o mixing.o hidden_mpi_vars.o grid.o coupling.o bgc.o tracers.o param.o marbl_driver.o
 set_forces.o : set_forces.F compute_tile_bounds.h set_global_definitions.h cppdefs.opt boundary.o analytical.o scalars.o hidden_mpi_vars.o bgc.o wec_frc.o tides.o pipe_frc.o river_frc.o tracers.o surf_flux.o flux_frc.o get_bulk_wnd.o bulk_frc.o param.o 
 closecdf.o : closecdf.F set_global_definitions.h cppdefs.opt scalars.o param.o 
