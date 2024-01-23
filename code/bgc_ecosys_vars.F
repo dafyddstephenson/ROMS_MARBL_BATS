@@ -6,7 +6,9 @@
 
       use param
       use tracers               ! for iPO4, etc, indices of bgc tracers (formerly in param.h)
+#ifdef MARBL      
       use marbl_driver,only: marbldrv_configure_saved_state
+#endif      
 #ifdef MARBL_DIAGS      
      &                      ,marbldrv_configure_diagnostics
 #endif      
