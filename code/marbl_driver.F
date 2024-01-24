@@ -348,8 +348,6 @@
 !     allocate arrays for 2d and 3d saved state variables      
             allocate( marbl_saved_state_2d(GLOBAL_2D_ARRAY,nr_marbl_ss_2d))
             allocate( marbl_saved_state_3d(GLOBAL_2D_ARRAY,nz,nr_marbl_ss_3d))
-            marbl_saved_state_2d(:,:,:)=0.
-            marbl_saved_state_3d(:,:,:,:)=0.
             if (mynode==0) then
                write(*,'(7x,A,I4,I4)') 'MARBL saved state allocation ::',
      &              nr_marbl_ss_2d,nr_marbl_ss_3d !3,2
@@ -688,6 +686,7 @@
 !     ################################################################################
 !     POPULATE/UPDATE SAVED STATE ARRAY
 !     20240117 - Currently all MARBL SF saved state vars are 2D, all IT saved state vars are 3D
+
             do m=1,MARBL_instance%surface_flux_saved_state%saved_state_cnt
                marbl_ss_2d(i,j,m)=
      &              MARBL_instance%surface_flux_saved_state%state(m)%field_2d(1)
@@ -907,6 +906,7 @@
             end do
             
 !     * need to update saved state after IT compute
+
             do m=1,MARBL_instance%interior_tendency_saved_state%saved_state_cnt
                marbl_ss_3d(i,j,:,m)=
      &             MARBL_instance%interior_tendency_saved_state%state(m)%field_3d(nz:1:-1,1)
