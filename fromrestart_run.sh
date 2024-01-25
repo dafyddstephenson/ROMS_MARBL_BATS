@@ -12,15 +12,15 @@ NP_XI=4; # from code/param.opt
 NP_ETA=2;
 
 ## Check which BGC engine we're using
-if grep -q "\!\# define MARBL" code/cppdefs.opt; 
+if grep -q "\!\# define BIOLOGY_BEC2" code/cppdefs.opt; 
 then
-    PREFIX=BEC    
-else
     PREFIX=MARBL
+else
+    PREFIX=BEC
 fi
 
-if [ ! -e INPUT/PARTED/${PREFIX}_rst.20120102120000.0.nc ];then
-    echo "Restart file for Jan 2nd 2012 not found"
+if [ ! -e RST/${PREFIX}_rst.20120103120000.0.nc ];then
+    echo "Restart file for Jan 3rd 2012 not found"
     echo "Run from scratch using INPUT/roms_ini_${PREFIX} first"
     echo "(script fromscratch_run.sh)"
     exit 1
@@ -31,6 +31,8 @@ mpirun -n 8 ./roms ./roms.in_"${PREFIX}"
 
 echo "MAIN RUN DONE"
 echo "########################################################################"
+
+cp ${PREFIX}_rst.*.?.nc RST/
 
 for X in ${PREFIX}_{rst,his,bgc}.*.0.nc; do
     ncjoin ${X/.0.nc}.?.nc

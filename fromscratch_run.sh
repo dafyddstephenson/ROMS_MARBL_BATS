@@ -47,6 +47,9 @@ mpirun -n 8 ./roms ./roms.in_"${PREFIX}"_fromscratch
 echo "MAIN RUN DONE"
 echo "########################################################################"
 
+if [ ! -d RST ];then mkdir RST;fi
+cp ${PREFIX}_rst.*.?.nc RST/
+
 for X in ${PREFIX}_{rst,his,bgc}.*.0.nc; do
     ncjoin ${X/.0.nc}.?.nc
     if [ -e ${X/.0.nc}.nc ]; then
@@ -54,7 +57,7 @@ for X in ${PREFIX}_{rst,his,bgc}.*.0.nc; do
     fi
 done
 
-cd INPUT
-ln -s ../"${PREFIX}"_rst.20120102120000.nc .
-partit "${NP_XI}" "${NP_ETA}" "${PREFIX}"_rst.20120102120000.nc
-mv "${PREFIX}"_rst.20120102120000.?.nc PARTED/
+#cd INPUT
+#ln -s ../"${PREFIX}"_rst.20120102120000.nc .
+#partit "${NP_XI}" "${NP_ETA}" "${PREFIX}"_rst.20120102120000.nc
+#mv "${PREFIX}"_rst.20120102120000.?.nc PARTED/

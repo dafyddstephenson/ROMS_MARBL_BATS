@@ -18,7 +18,7 @@ forcing: filename
       
 initial: NRREC  filename
           2
-	  INPUT/PARTED/BEC_rst.20120102120000.nc
+	  RST/BEC_rst.20120103120000.nc
 output_root_name:
       BEC 
 
