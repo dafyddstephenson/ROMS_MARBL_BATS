@@ -58,6 +58,9 @@
 
       dummy_array(:)=1.0        ! Temporary measure until we can access an allocated Hz,z_w,z_r
 
+
+      ! First things first: read marbl_in line by line and use put_setting
+      
       call marbl_instance%init(gcm_num_levels=nz,
      &     gcm_num_PAR_subcols = 1,
      &     gcm_num_elements_surface_flux = 1,
@@ -67,6 +70,18 @@
      &     lgcm_has_global_ops = .true.,
      &     unit_system_opt='mks')
 
+!     20240124 - add a check that the number of tracers in MARBL_instance is NT:
+      if ( size(marbl_instance%tracer_metadata) .ne. nt ) then
+         write(*,'(7x,A,I4,A,I4,A,I4,A)')
+     &        'ERROR: Allocated no. of MARBL tracers'
+     &        ,nt
+     &        ,' does not match no. expected by MARBL: '
+     &        ,size(marbl_instance%tracer_metadata)
+     &        ,' set nt = ',size(marbl_instance%tracer_metadata)
+     &        ,' in param.opt and recompile'
+         error stop 'ERROR reported from MARBL library'
+      end if      
+!     /20240124    
         
       call print_marbl_log(marbl_instance%StatusLog)
       call marbl_instance%StatusLog%erase()
@@ -263,12 +278,56 @@
       idx2d=1
       idx3d=1
 
-      if (mynode==0)  print *, 'MARBL SURFACE FLUX DIAGNOSTICS'
+! Count the number of 2D & 3D diagnostics expected by MARBL ...
       do m=1,size(MARBL_instance%surface_flux_diags%diags)
          n_marbl_diags=n_marbl_diags+1
-         if (trim(MARBL_instance%surface_flux_diags%diags(m)%vertical_grid) .eq. "none") then ! 2D field
+         if (trim(MARBL_instance%surface_flux_diags%diags(m)
+     &        %vertical_grid) .eq. "none") then ! 2D field
             n_marbl_2d_sf_diags=n_marbl_2d_sf_diags+1
-            
+         else
+            n_marbl_3d_sf_diags=n_marbl_3d_sf_diags+1
+         end if
+      end do
+      do m=1,size(MARBL_instance%interior_tendency_diags%diags)
+         n_marbl_diags=n_marbl_diags+1
+         if (trim(MARBL_instance%interior_tendency_diags%diags(m)
+     &        %vertical_grid) .eq. "none") then ! 2D field
+            n_marbl_2d_it_diags=n_marbl_2d_it_diags+1
+         else
+            n_marbl_3d_it_diags=n_marbl_3d_it_diags+1
+         end if
+      end do
+! ... so we can check if it matches the number allocated by ROMS ...
+      if ( size(vname_bec2_diag_2d(1,:)) .ne.
+     &     (n_marbl_2d_sf_diags+n_marbl_2d_it_diags) ) then
+         write(*,'(7x,A,I4,A,I4,A,I4,A)')
+     &        'ERROR: Allocated no. of 2D BGC diagnostics: '
+     &        ,size(vname_bec2_diag_2d(1,:)
+     &        ,' does not match no. expected by MARBL: '
+     &        ,(n_marbl_2d_sf_diags+n_marbl_2d_it_diags)
+     &        ,'. Set nr_bec2_diag_2d = '
+     &        (n_marbl_2d_sf_diags+n_marbl_2d_it_diags)
+     &        ' in bgc_ecosys_vars.F and recompile'
+         error stop 'ERROR reported from MARBL library'
+      elseif ( size(vname_bec2_diag_3d(1,:)) .ne.
+     &        (n_marbl_3d_sf_diags+n_marbl_3d_it_diags) ) then
+         write(*,'(7x,A,I4,A,I4,A,I4,A)')
+     &        'ERROR: Allocated no. of 3D BGC diagnostics: '
+     &        ,size(vname_bec2_diag_3d(1,:)
+     &        ,' does not match no. expected by MARBL: '
+     &        ,(n_marbl_3d_sf_diags+n_marbl_3d_it_diags)
+     &        ,'. Set nr_bec2_diag_3d = '
+     &        (n_marbl_3d_sf_diags+n_marbl_3d_it_diags)
+     &        ' in bgc_ecosys_vars.F and recompile'
+         error stop 'ERROR reported from MARBL library'
+      end if
+!     ...  end of check
+! NOTE: need to set these values in an opt file or elsewhere but not bgc_ecosys_vars
+      
+!     Populate BGC diagnostics metadata arrays in ROMS using MARBL
+      if (mynode==0)  print *, 'MARBL SURFACE FLUX DIAGNOSTICS'
+      do m=1,size(MARBL_instance%surface_flux_diags%diags)
+         if (trim(MARBL_instance%surface_flux_diags%diags(m)%vertical_grid) .eq. "none") then ! 2D field
             vname_bec2_diag_2d(1,idx2d)=
      &           trim(MARBL_instance%surface_flux_diags%diags(m)%short_name)
             vname_bec2_diag_2d(2,idx2d)=
@@ -281,8 +340,6 @@
             idx2d=idx2d+1
          else                   ! 3D field
             ! There are no 3D surface flux diags, this is for generalisation purposes
-            n_marbl_3d_sf_diags=n_marbl_3d_sf_diags+1
-
             vname_bec2_diag_3d(1,idx3d)=
      &           trim(MARBL_instance%surface_flux_diags%diags(m)%short_name)
             vname_bec2_diag_3d(2,idx3d)=
@@ -296,13 +353,9 @@
          end if
       end do
 
-
       if (mynode==0) print *, 'MARBL INTERIOR TENDENCY DIAGNOSTICS'
       do m=1,size(MARBL_instance%interior_tendency_diags%diags)
-         n_marbl_diags=n_marbl_diags+1
          if (trim(MARBL_instance%interior_tendency_diags%diags(m)%vertical_grid) .eq. "none") then ! 2D field
-            n_marbl_2d_it_diags=n_marbl_2d_it_diags+1
-
             vname_bec2_diag_2d(1,idx2d)=
      &           trim(MARBL_instance%interior_tendency_diags%diags(m)%short_name)
             vname_bec2_diag_2d(2,idx2d)=
@@ -314,7 +367,6 @@
 
             idx2d=idx2d+1
          else                   ! 3D field
-            n_marbl_3d_it_diags=n_marbl_3d_it_diags+1
 
             vname_bec2_diag_3d(1,idx3d)=
      &           trim(MARBL_instance%interior_tendency_diags%diags(m)%short_name)
@@ -328,6 +380,7 @@
             idx3d=idx3d+1
          end if
       end do
+      
       if (mynode==0) then
          print *, 'number of 2D marbl diags', n_marbl_2d_sf_diags+n_marbl_2d_it_diags
          print *, 'number of 3D marbl diags', n_marbl_3d_sf_diags+n_marbl_3d_it_diags
