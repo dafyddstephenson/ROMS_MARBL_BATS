@@ -47,8 +47,10 @@
       real,allocatable,dimension(:,:,:  ) :: marbl_saved_state_2d 
       real,allocatable,dimension(:,:,:,:) :: marbl_saved_state_3d
       character*72 :: vname_marbl_ss_2d(4,nr_marbl_ss_2d)
-      character*72 :: vname_marbl_ss_3d(4,nr_marbl_ss_3d)   
-      
+      character*72 :: vname_marbl_ss_3d(4,nr_marbl_ss_3d)
+      integer :: printi = 4
+      integer :: printj = 4
+      integer :: printnode = 7
       
 #include "bgc_tracers_indx.opt"
       
@@ -142,7 +144,7 @@
          !case('diatP')          ! Diatom phosphorous
          !case('diazP')          ! Diazotroph phosphorous
          case default
-            if (mynode==0) then
+            if (mynode==printnode) then
                print *, 'Receiving non-BEC tracer: ',
      &              (trim(marbl_instance%tracer_metadata(idx)%short_name))
             end if
@@ -175,11 +177,11 @@
       xco2_ind = -1
       xco2_alt_ind = -1
 
-      if (mynode==0) then 
+      if (mynode==printnode) then 
          print *, 'Here are the SF forcings MARBL requested'
       end if
       do idx=1,size(marbl_instance%surface_flux_forcings)
-         if (mynode==0) then
+         if (mynode==printnode) then
             print *, 'var: ', (trim(MARBL_instance%surface_flux_forcings(idx)%metadata%varname))
             print *, 'units:',(trim(MARBL_instance%surface_flux_forcings(idx)%metadata%field_units))
          end if
@@ -215,14 +217,14 @@
   !     ii. store all interior forcing indices
   ! This just creates indices (like the iNO3 etc. above) so that later in column_physics 
   ! we can check if theyre > 0 (i.e. that forcing exists) and populate the field 
-      if (mynode==0) then
+      if (mynode==printnode) then
          print *, 'Here are the int. tend. forcings MARBL requested'
       end if
       
       do idx=1,size(MARBL_instance%interior_tendency_forcings)
     ! i. Check to see if this is a tracer restoring field or timescale
     ! ii. If not, should be one of the following:  
-         if (mynode==0) then
+         if (mynode==printnode) then
             print *,'var: '  ,(trim(MARBL_instance%interior_tendency_forcings(idx)%metadata%varname))
             print *,'units: ',(trim(MARBL_instance%interior_tendency_forcings(idx)%metadata%field_units))            
          end if
@@ -316,7 +318,7 @@
      &              trim(MARBL_instance%surface_flux_saved_state%state(iss)%units)
                vname_marbl_ss_2d(4,iss)='  '
                
-               if (mynode==0) then
+               if (mynode==printnode) then
                   print *, 'MARBL SF SAVED STATE VARIABLE ',
      &                 trim(vname_marbl_ss_2d(1,iss)),'  ',
      &                 trim(vname_marbl_ss_2d(2,iss)),'  ',
@@ -336,7 +338,7 @@
      &              trim(MARBL_instance%interior_tendency_saved_state%state(iss)%units)
                
 
-               if (mynode==0) then
+               if (mynode==printnode) then
                   print *, 'MARBL IT SAVED STATE VARIABLE ',
      &                 trim(vname_marbl_ss_3d(1,iss)),'  ',
      &                 trim(vname_marbl_ss_3d(2,iss)),'  ',
@@ -348,7 +350,7 @@
 !     allocate arrays for 2d and 3d saved state variables      
             allocate( marbl_saved_state_2d(GLOBAL_2D_ARRAY,nr_marbl_ss_2d))
             allocate( marbl_saved_state_3d(GLOBAL_2D_ARRAY,nz,nr_marbl_ss_3d))
-            if (mynode==0) then
+            if (mynode==printnode) then
                write(*,'(7x,A,I4,I4)') 'MARBL saved state allocation ::',
      &              nr_marbl_ss_2d,nr_marbl_ss_3d !3,2
             end if
@@ -395,7 +397,7 @@
       diagidx2d=1
       diagidx3d=1
       
-      if (mynode==0)  print *, 'MARBL SURFACE FLUX DIAGNOSTICS'
+      if (mynode==printnode)  print *, 'MARBL SURFACE FLUX DIAGNOSTICS'
       do m=1,size(MARBL_instance%surface_flux_diags%diags)
          n_marbl_diags=n_marbl_diags+1
          if (trim(MARBL_instance%surface_flux_diags%diags(m)%vertical_grid) .eq. "none") then ! 2D field
@@ -429,7 +431,7 @@
       end do
 
 
-      if (mynode==0) print *, 'MARBL INTERIOR TENDENCY DIAGNOSTICS'
+      if (mynode==printnode) print *, 'MARBL INTERIOR TENDENCY DIAGNOSTICS'
       do m=1,size(MARBL_instance%interior_tendency_diags%diags)
          n_marbl_diags=n_marbl_diags+1
          if (trim(MARBL_instance%interior_tendency_diags%diags(m)%vertical_grid) .eq. "none") then ! 2D field
@@ -460,7 +462,7 @@
             diagidx3d=diagidx3d+1
          end if
       end do
-      if (mynode==0) then
+      if (mynode==printnode) then
          print *, 'number of 2D marbl diags', n_marbl_2d_sf_diags+n_marbl_2d_it_diags
          print *, 'number of 3D marbl diags', n_marbl_3d_sf_diags+n_marbl_3d_it_diags
       end if
@@ -627,8 +629,8 @@
                marbl_instance%tracers_at_surface(1,m)=
      &                 tracer_array(i,j,nz,nnew, m+(NT-nt_marbl))
                
-               if ( (i==1) .and. (j==1)
-     &              .and. (mynode==0) .and. (sf_verb) ) then
+               if ( (i==printi) .and. (j==printj)
+     &              .and. (mynode==printnode) .and. (sf_verb) ) then
                   print *, 'We just set surface ',
      &                 (trim(MARBL_instance%tracer_metadata(m)%short_name)),
      &                 ' as ',marbl_instance%tracers_at_surface(1,m),
@@ -641,7 +643,7 @@
 !     * surface flux saved state
 !     just set to 0 for now
 !            do m=1,size(MARBL_instance%surface_flux_saved_state%state)
-!               if ((mynode==0) .and. (j==jend-1) .and. (i==iend-1)) then
+!               if ((mynode==printnode) .and. (j==jend-1) .and. (i==iend-1)) then
 !                  print *, 'SF saved state: ',
 !     &                 MARBL_instance%surface_flux_saved_state%state(m)%long_name
 !               end if               
@@ -650,12 +652,24 @@
 !            enddo
 !     20240117 - Currently all MARBL SF saved state vars are 2D, all IT saved state vars are 3D
             do m=1,MARBL_instance%surface_flux_saved_state%saved_state_cnt
-               if ( (mynode==0) .and. (j==1) .and. (i==1) ) then
-                  print *, 'POPULATING SF saved state: ',
-     &                 trim(MARBL_instance%surface_flux_saved_state%state(m)%long_name)
-               end if
+!               if ( (mynode==printnode) .and. (j==printj) .and. (i==printi) ) then
+!                  print *, 'POPULATING SF saved state: ',
+!     &                 trim(MARBL_instance%surface_flux_saved_state%state(m)%long_name)
+!               end if
                MARBL_instance%surface_flux_saved_state%state(m)%field_2d(1)
      &              =marbl_ss_2d(i,j,m) !0.
+
+               if ( (i==printi) .and. (j==printj)
+     &              .and. (mynode==printnode) .and. (sf_verb) ) then
+                  print *, 'We just set surface ',
+     &                 trim(MARBL_instance%surface_flux_saved_state%
+     &                 state(m)%short_name),
+     &                 ' as ',MARBL_instance%surface_flux_saved_state%
+     &                 state(m)%field_2d(1),
+     &                 trim(MARBL_instance%surface_flux_saved_state%
+     &                 state(m)%units)
+               end if
+               
             end do
                
 !/20240117
@@ -663,12 +677,12 @@
 !     ################################################################################
 !     CALL SURFACE_FLUX_COMPUTE()
 
-            if ( (mynode==0) .and. (j==1) .and. (i==1) ) then
+            if ( (mynode==printnode) .and. (j==printj) .and. (i==printi) ) then
                print *, "calling surface flux compute..."
             end if
             
             call marbl_instance%surface_flux_compute()
-            if ( (mynode==0) .and. (j==1) .and. (i==1) ) then
+            if ( (mynode==printnode) .and. (j==printj) .and. (i==printi) ) then
                print *, "calling surface flux compute... done"
             end if
 
@@ -700,7 +714,7 @@
                if (trim(MARBL_instance%surface_flux_diags%diags(m
      &              )%vertical_grid) .eq. "none") then ! 2D field
                   
-!                  if ((mynode==0) .and. (i==1) .and. (j==1) )
+!                  if ((mynode==printnode) .and. (i==printi) .and. (j==printj) )
 !     &                 print *, 'SF DIAG 2D ',diagidx2d,
 !     &                 trim(MARBL_instance%surface_flux_diags%diags(m)%short_name)
 !                  
@@ -709,7 +723,7 @@
                   diagidx2d=diagidx2d+1
                else             ! 3D field
 
-!                  if ((mynode==0) .and. (i==1) .and. (j==1) )
+!                  if ((mynode==printnode) .and. (i==printi) .and. (j==printj) )
 !     &                 print *, 'SF DIAG 3D ',diagidx3d,
 !     &                 trim(MARBL_instance%surface_flux_diags%diags(m)%short_name)                  
                   
@@ -718,7 +732,7 @@
                   diagidx3d=diagidx3d+1
                end if
             end do
-            if (mynode==0) print *, 'IN MCP, populated SF diag arrays'             
+            if (mynode==printnode) print *, 'IN MCP, populated SF diag arrays'             
 #endif       
            
             
@@ -766,8 +780,8 @@
      &              =tracer_array(i,j,nz:1:-1,nnew,itemp)
 
                tmpind=potemp_ind
-               if ( (sf_verb) .and. (mynode==0) .and.
-     &              (i==1) .and. (j==1)) then
+               if ( (sf_verb) .and. (mynode==printnode) .and.
+     &              (i==printi) .and. (j==printj)) then
                   print *, 'We just set bottom ',
      &                 trim(MARBL_instance%interior_tendency_forcings(tmpind)%metadata%varname),
      &                 MARBL_instance%interior_tendency_forcings(tmpind)%field_1d(1,nz),
@@ -779,8 +793,8 @@
                MARBL_instance%interior_tendency_forcings(salinity_ind)%field_1d(1,:)
      &              =tracer_array(i,j,nz:1:-1,nnew,isalt)
                tmpind=salinity_ind
-               if ( (sf_verb) .and. (mynode==0) .and.
-     &              (i==1) .and. (j==1)) then
+               if ( (sf_verb) .and. (mynode==printnode) .and.
+     &              (i==printi) .and. (j==printj)) then
                   print *, 'We just set bottom ',
      &                 trim(MARBL_instance%interior_tendency_forcings(tmpind)%metadata%varname),
      &                 MARBL_instance%interior_tendency_forcings(tmpind)%field_1d(1,nz),
@@ -794,8 +808,8 @@
 !     &              =p(i,j,nz:1:-1)
 
                tmpind=pressure_ind
-               if ( (sf_verb) .and. (mynode==0) .and.
-     &              (i==1) .and. (j==1)) then
+               if ( (sf_verb) .and. (mynode==printnode) .and.
+     &              (i==printi) .and. (j==printj)) then
                   print *, 'We just set bottom ',
      &                 trim(MARBL_instance%interior_tendency_forcings(tmpind)%metadata%varname),
      &                 MARBL_instance%interior_tendency_forcings(tmpind)%field_1d(1,nz),
@@ -814,8 +828,8 @@
                MARBL_instance%interior_tendency_forcings(fesedflux_ind)%field_1d(1,:)=0.
 
                tmpind=fesedflux_ind
-               if ( (sf_verb) .and. (mynode==0) .and.
-     &              (i==1) .and. (j==1)) then
+               if ( (sf_verb) .and. (mynode==printnode) .and.
+     &              (i==printi) .and. (j==printj)) then
                   print *, 'We just set bottom ',
      &                 trim(MARBL_instance%interior_tendency_forcings(tmpind)%metadata%varname),
      &                 MARBL_instance%interior_tendency_forcings(tmpind)%field_1d(1,nz),
@@ -843,8 +857,8 @@
                marbl_instance%tracers(m,:)=                  
      &              tracer_array(i,j,nz:1:-1,nnew, m+(NT-nt_marbl) )
                
-               if ( (i==1) .and. (j==1)
-     &              .and. (mynode==0) .and. (sf_verb) ) then
+               if ( (i==printi) .and. (j==printj)
+     &              .and. (mynode==printnode) .and. (sf_verb) ) then
                   print *, 'We just set bottom ',
      &                 (trim(MARBL_instance%tracer_metadata(m)%short_name)),
      &                 ' as ',marbl_instance%tracers(m,nz),
@@ -857,7 +871,7 @@
 !     Currently just set to 0 - TODO
             
 !            do m=1,size(MARBL_instance%interior_tendency_saved_state%state)
-!               if ((mynode==0) .and. (j==1) .and. (i==1)) then
+!               if ((mynode==printnode) .and. (j==printj) .and. (i==printi)) then
 !                  print *, 'IT saved state: ',
 !     &                 MARBL_instance%interior_tendency_saved_state%state(m)%long_name
 !               end if
@@ -866,13 +880,24 @@
 !            enddo            
 !     20240117 - Currently all MARBL SF saved state vars are 2D, all IT saved state vars are 3D            
             do m=1,MARBL_instance%interior_tendency_saved_state%saved_state_cnt
-                  if ( (mynode==0) .and. (i==1) .and. (j==1) ) then
-                     print *, 'POPULATING IT saved state: ',
-     &                trim(MARBL_instance%interior_tendency_saved_state%state(m)%long_name)
-                  end if
+!     if ( (mynode==printnode) .and. (i==printi) .and. (j==printj) ) then
+!                     print *, 'POPULATING IT saved state: ',
+!     &                trim(MARBL_instance%interior_tendency_saved_state%state(m)%long_name)
+!                  end if
                
                MARBL_instance%interior_tendency_saved_state%state(m)%field_3d(:,1)
-     &              =marbl_ss_3d(i,j,nz:1:-1,m) !0.               
+     &                    =marbl_ss_3d(i,j,nz:1:-1,m) !0.
+               
+               if ( (i==printi) .and. (j==printj)
+     &              .and. (mynode==printnode) .and. (sf_verb) ) then
+                  print *, 'We just set bottom ',
+     &                 trim(MARBL_instance%
+     &                 interior_tendency_saved_state%state(m)%long_name)
+     &                 ,' as ',marbl_instance%
+     &                 interior_tendency_saved_state%state(m)%field_3d(nz,1)
+     &                 ,trim(MARBL_instance%interior_tendency_saved_state%state(m)%units) 
+               end if
+               
             end do    
 !/20240117
 
@@ -922,7 +947,7 @@
                if (trim(MARBL_instance%interior_tendency_diags%diags(m
      &              )%vertical_grid) .eq. "none") then ! 2D field
 
-!                  if ((mynode==0) .and. (i==1) .and. (j==1) )
+!                  if ((mynode==printnode) .and. (i==printi) .and. (j==printj) )
 !     &                 print *, 'IT DIAG 2D ',diagidx2d,
 !     &                 trim(MARBL_instance%interior_tendency_diags%diags(m)%short_name)
                   
@@ -931,7 +956,7 @@
                   diagidx2d=diagidx2d+1
                else             ! 3D field
 
-!                  if ((mynode==0) .and. (i==1) .and. (j==1) )
+!                  if ((mynode==printnode) .and. (i==printi) .and. (j==printj) )
 !     &                 print *, 'IT DIAG 3D ',diagidx3d,
 !     &                 trim(MARBL_instance%interior_tendency_diags%diags(m)%short_name)
 
@@ -973,7 +998,7 @@
       
 ! Check we are either on principal cpu OR all cpus can write:
          if ((.not. marbl_status_log_pointer%lonly_master_writes) .or.
-     &        (mynode==0)) then
+     &        (mynode==printnode)) then
 !     check if we know the location of this log message
             if (marbl_status_log_pointer%ElementInd .gt. 0) then
                if (present(i) .and. present(j)) then
@@ -987,23 +1012,23 @@
                
 
 !     If on principal CPU, don't apply prefix stating task #
-               if (mynode==0) then
+               if (mynode==printnode) then
                   write(log_message,"(A)") trim(message_location)
                else
                   write(log_message,"(A,1X,A)")
      &                 trim(message_prefix), trim(message_location)
-               end if           ! (mynode==0)
+               end if           ! (mynode==printnode)
                print *, trim(log_message)
             end if              ! (ElementInd > 0)
             
-            if (mynode==0) then
+            if (mynode==printnode) then
                write(log_message,"(A)")
      &              trim(marbl_status_log_pointer%LogMessage)
             else
                write(log_message,"(A,1X,A)")
      &              trim(message_prefix),
      &              trim(marbl_status_log_pointer%LogMessage)
-            end if              ! (mynode==0)
+            end if              ! (mynode==printnode)
             print *, trim(log_message)
          end if ! mynode 0 or not master task only
             
@@ -1022,9 +1047,9 @@
       integer, intent(in) :: i,j,ind
       integer, intent(in) :: istr,jstr,iend,jend
 
-      if (j==1) then
-         if (i==1) then
-            if (mynode==0) then
+      if (j==printj) then
+         if (i==printi) then
+            if (mynode==printnode) then
                print *, 'We just set ',
      &              (trim(MARBL_instance%surface_flux_forcings(ind)%metadata%varname)),
      &              ' as ',marbl_instance%surface_flux_forcings(ind)%field_0d(1),
@@ -1038,9 +1063,9 @@
       integer, intent(in) :: i,j,ind
       integer, intent(in) :: istr,jstr,iend,jend
 
-      if (j==1) then
-         if (i==1) then
-            if (mynode==0) then
+      if (j==printj) then
+         if (i==printi) then
+            if (mynode==printnode) then
                print *, 'We just set ',
      &              (trim(MARBL_instance%interior_tendency_forcings(ind)%metadata%varname)),
      &              ' as ',marbl_instance%interior_tendency_forcings(ind)%field_1d(1,:)
