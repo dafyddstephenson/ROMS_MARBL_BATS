@@ -523,14 +523,14 @@
             if (sss_ind > 0) then
                marbl_instance%surface_flux_forcings(sss_ind)%field_0d(1)
      &              =tracer_array(i,j,nz,nnew,isalt)
-               if (sf_verb) call sf_test_print(sss_ind,i,j,istr,iend,jstr,jend)
+               if (sf_verb) call sf_test_print(sss_ind,i,j)
             end if
 !     -------------------------------------------------------------------------------- SST!!
 !     (degC)
             if (sst_ind > 0) then
                marbl_instance%surface_flux_forcings(sst_ind)%field_0d(1)
      &              =tracer_array(i,j,nz,nnew,itemp)
-               call sf_test_print(sst_ind,i,j,istr,iend,jstr,jend)               
+               call sf_test_print(sst_ind,i,j)
             end if
 !     -------------------------------------------------------------------------------- ifrac
 !     (unitless) - NO ICE IN ROMS SO SET TO 0
@@ -539,7 +539,7 @@
 
                marbl_instance%surface_flux_forcings(ifrac_ind)%field_0d(1)=0
 !     &              ifrac(i,j)
-               if (sf_verb) call sf_test_print(ifrac_ind,i,j,istr,iend,jstr,jend)                        
+               if (sf_verb) call sf_test_print(ifrac_ind,i,j)
             end if
 !     -------------------------------------------------------------------------------- wspd^2
 !     (m2/s2)
@@ -547,7 +547,7 @@
                marbl_instance%surface_flux_forcings(u10_sqr_ind)%field_0d(1)=
      &               (uwnd(i,j)**2) + (vwnd(i,j)**2)
 
-               if (sf_verb) call sf_test_print(u10_sqr_ind,i,j,istr,iend,jstr,jend) 
+               if (sf_verb) call sf_test_print(u10_sqr_ind,i,j)
             end if
 !     -------------------------------------------------------------------------------- press!!
 !     (MARBL: atm, ROMS: atm [bgc_ecosys_bec2])
@@ -557,7 +557,7 @@
             if (atmpress_ind > 0) then
             marbl_instance%surface_flux_forcings(atmpress_ind)%field_0d(1)=1.
 !     &              press(i,j)
-            if (sf_verb) call sf_test_print(atmpress_ind,i,j,istr,iend,jstr,jend)             
+            if (sf_verb) call sf_test_print(atmpress_ind,i,j)
 
             
             end if 
@@ -567,14 +567,14 @@
             if (xco2_ind > 0) then
                marbl_instance%surface_flux_forcings(xco2_ind)%field_0d(1)=
      &              pco2air(i,j)
-               if (sf_verb) call sf_test_print(xco2_ind,i,j,istr,iend,jstr,jend)               
+               if (sf_verb) call sf_test_print(xco2_ind,i,j)
             end if
 !     -------------------------------------------------------------------------------- altpco2 !!
 !     (MARBL: ppmv; ROMS: none)
             if (xco2_alt_ind > 0) then
                marbl_instance%surface_flux_forcings(xco2_alt_ind)%field_0d(1)=
      &              pco2air_alt(i,j)
-               if (sf_verb) call sf_test_print(xco2_alt_ind,i,j,istr,iend,jstr,jend)               
+               if (sf_verb) call sf_test_print(xco2_alt_ind,i,j)
             end if
 !     -------------------------------------------------------------------------------- dust !!
 !     (MARBL: kg/m^2/s ; ROMS: kg/m^2/s
@@ -583,14 +583,14 @@
             if (dust_dep_ind > 0) then
                marbl_instance%surface_flux_forcings(dust_dep_ind)%field_0d(1)
      &              = dust(i,j)
-               if (sf_verb) call sf_test_print(dust_dep_ind,i,j,istr,iend,jstr,jend)               
+               if (sf_verb) call sf_test_print(dust_dep_ind,i,j)
             end if
 !     -------------------------------------------------------------------------------- iron
 !     (MARBL: mmol/m^2/s; ROMS: nmol/cm^2/s)
             if (fe_dep_ind > 0) then
                marbl_instance%surface_flux_forcings(fe_dep_ind)%field_0d(1)=
      &              iron(i,j)*0.01 ! nmol/cm2/s -> mmol/m2/s
-               if (sf_verb) call sf_test_print(fe_dep_ind,i,j,istr,iend,jstr,jend)                   
+               if (sf_verb) call sf_test_print(fe_dep_ind,i,j)
             end if               
 !     -------------------------------------------------------------------------------- nox !!!
 !     (MARBL: mmol/m^2/s; ROMS: kg/m^2/s)
@@ -600,7 +600,7 @@
                marbl_instance%surface_flux_forcings(nox_flux_ind)%field_0d(1)=               
      &              nox(i,j)*71394.200220751 ! kg(N)/m2/s -> mmol/m2/s
 !     &              1e-13 * 71394.200220751 ! just setting to a nonzero value for now               
-               if (sf_verb) call sf_test_print(nox_flux_ind,i,j,istr,iend,jstr,jend)               
+               if (sf_verb) call sf_test_print(nox_flux_ind,i,j)
             end if
 #endif            
 !     -------------------------------------------------------------------------------- nhy !!!
@@ -610,7 +610,7 @@
                marbl_instance%surface_flux_forcings(nhy_flux_ind)%field_0d(1)=
      &              nhy(i,j)*71394.200220751 ! kg(N)/m2/s -> mmol/m2/s               
 !     &              1e-13 * 71394.200220751 ! just setting to a nonzero value for now               
-               if (sf_verb) call sf_test_print(nhy_flux_ind,i,j,istr,iend,jstr,jend)                                            
+               if (sf_verb) call sf_test_print(nhy_flux_ind,i,j)
             end if
 #endif
 !     --------------------------------------------------------------------------------
@@ -643,7 +643,7 @@
 !     * surface flux saved state
 !     just set to 0 for now
 !            do m=1,size(MARBL_instance%surface_flux_saved_state%state)
-!               if ((mynode==printnode) .and. (j==jend-1) .and. (i==iend-1)) then
+!               if ((mynode==printnode) .and. (j==printj) .and. (i==printi)) then
 !                  print *, 'SF saved state: ',
 !     &                 MARBL_instance%surface_flux_saved_state%state(m)%long_name
 !               end if               
@@ -732,11 +732,8 @@
                   diagidx3d=diagidx3d+1
                end if
             end do
-            if (mynode==printnode) print *, 'IN MCP, populated SF diag arrays'             
 #endif       
            
-            
-            
          end do   ! j=jstr,jend
       end do      ! i=istr,iend
       
@@ -1043,9 +1040,8 @@
       end subroutine print_marbl_log
 
       
-      subroutine sf_test_print(ind,i,j,istr,iend,jstr,jend)
+      subroutine sf_test_print(ind,i,j)
       integer, intent(in) :: i,j,ind
-      integer, intent(in) :: istr,jstr,iend,jend
 
       if (j==printj) then
          if (i==printi) then
@@ -1059,9 +1055,8 @@
       end if                              
       end subroutine sf_test_print
 
-      subroutine if_test_print(ind,i,j,istr,iend,jstr,jend)
+      subroutine if_test_print(ind,i,j)
       integer, intent(in) :: i,j,ind
-      integer, intent(in) :: istr,jstr,iend,jend
 
       if (j==printj) then
          if (i==printi) then
