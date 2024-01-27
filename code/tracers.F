@@ -342,14 +342,12 @@
      &     itot,t_vname,t_lname,t_units,t_tname,wrt_t,wrt_t_avg,t_ana_frc)
 #endif      
 
-#if defined(BIOLOGY_BEC2) || defined(MARBL)
+#if defined(BIOLOGY_BEC2)
       if (mynode==0) then
          print *, 'itmp,islt'
          print *, itmp, islt
-#ifndef MARBL         
          print *, 'iDOFE'
          print *, iDOFE
-#endif         
          print *, 'iPO4, iNO3, iSIO3, iNH4, iFE'
          print *, iPO4, iNO3, iSIO3, iNH4, iFE      
          print *, 'iO2, iDIC,iALK, iDOC, iDON'
@@ -359,10 +357,10 @@
          print *, 'iSPC, iSPFE, iSPCACO3, iDIATCHL, iDIATC'
          print *, iSPC, iSPFE, iSPCACO3, iDIATCHL, iDIATC      
          print *, 'iDIATFE, iDIATSI, iDIAZCHL, iDIAZC, iDIAZFE'
-         print *, iDIATFE, iDIATSI, iDIAZCHL, iDIAZC, iDIAZFE      
-!     print *, 'iLIG,iDOCR,iSPP,iDIATP,iDIAZP,iALK_ALT_CO2,iDIC_ALT_CO2'      
-!     print *, iLIG,iDOCR,iSPP,iDIATP,iDIAZP,iALK_ALT_CO2,iDIC_ALT_CO2
-         
+         print *, iDIATFE, iDIATSI, iDIAZCHL, iDIAZC, iDIAZFE
+      end if
+#endif
+      if (mynode==0) then
          print *, 'info about ',NT, ' tracers incoming'
          do itrc=1,NT
             print *, '-----------'
@@ -373,7 +371,7 @@
             print *, '-----------'         
          end do
       end if
-#endif       
+
       allocate( t(GLOBAL_2D_ARRAY,N,3,NT) )
       t=0.
 
