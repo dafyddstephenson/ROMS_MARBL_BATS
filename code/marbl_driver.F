@@ -68,7 +68,6 @@
       if (mynode>=0) then ! In MOM would be ==0 but this relies on "broadcast" (see below)
      ! read the marbl_in into buffer
          open(unit=marbl_settings_in, file='marbl_in', iostat=read_status)
-         print *, 'FIRST READ STATUS IS ',read_status
          if (read_status .ne. 0) then !can't find namelist file, skip
 
             write(*, '(A, I0, 3A)') "IO WARNING ", read_status,
@@ -93,16 +92,22 @@
                   exit !loop
                else
                   call marbl_instance%put_setting(namelist_line)
+                  if (mynode==0) print *,'marbl_in: ',namelist_line
                end if
                
             end do              ! namelist line-by-line read
+
             if (is_iostat_end(read_status)) then
-               write(*, '(3A)') "Successfully read ","marbl_in",
-     &              " to end of file"
+               if (mynode==0) then
+                  write(*, '(3A)') "Successfully read ","marbl_in",
+     &                 " to end of file"
+               end if
             else
-               write(*, '(A, I0, 2A)') "IO ERROR ", read_status,
-     &           " : ERROR reading MARBL namelist file  ",
-     &              "marbl_in"
+               if (mynode==0) then
+                  write(*, '(A, I0, 2A)') "IO ERROR ", read_status,
+     &                 " : ERROR reading MARBL namelist file  ",
+     &                 "marbl_in"
+               end if
                error stop
             end if
          
@@ -201,7 +206,9 @@
          case('xco2_alt_co2')
             xco2_alt_ind = idx
          case DEFAULT
-            print *, 'default'
+            print *, 'Additional forcing requested but not indexed: ',
+     &           trim(MARBL_instance%surface_flux_forcings(idx)
+     &           %metadata%varname)
          end select
       enddo
 
@@ -240,7 +247,9 @@
          case('Particulate Remin Scale Factor')
             remin_scalef_ind = idx
          case DEFAULT
-            print *,'default'
+            print *, 'Additional forcing requested but not indexed: ',
+     &           trim(MARBL_instance%interior_tendency_forcings(idx)
+     &           %metadata%varname)
          end select
       enddo
 
@@ -289,23 +298,23 @@
      &     (n_marbl_2d_sf_diags+n_marbl_2d_it_diags) ) then
          write(*,'(7x,A,I4,A,I4,A,I4,A)')
      &        'ERROR: Allocated no. of 2D BGC diagnostics: '
-     &        ,size(vname_bec2_diag_2d(1,:)
+     &        ,size(vname_bec2_diag_2d(1,:))
      &        ,' does not match no. expected by MARBL: '
      &        ,(n_marbl_2d_sf_diags+n_marbl_2d_it_diags)
      &        ,'. Set nr_bec2_diag_2d = '
-     &        (n_marbl_2d_sf_diags+n_marbl_2d_it_diags)
-     &        ' in bgc_ecosys_vars.F and recompile'
+     &        ,(n_marbl_2d_sf_diags+n_marbl_2d_it_diags)
+     &        ,' in bgc_ecosys_vars.F and recompile'
          error stop 'ERROR reported from MARBL library'
       elseif ( size(vname_bec2_diag_3d(1,:)) .ne.
      &        (n_marbl_3d_sf_diags+n_marbl_3d_it_diags) ) then
          write(*,'(7x,A,I4,A,I4,A,I4,A)')
      &        'ERROR: Allocated no. of 3D BGC diagnostics: '
-     &        ,size(vname_bec2_diag_3d(1,:)
+     &        ,size(vname_bec2_diag_3d(1,:))
      &        ,' does not match no. expected by MARBL: '
      &        ,(n_marbl_3d_sf_diags+n_marbl_3d_it_diags)
      &        ,'. Set nr_bec2_diag_3d = '
-     &        (n_marbl_3d_sf_diags+n_marbl_3d_it_diags)
-     &        ' in bgc_ecosys_vars.F and recompile'
+     &        ,(n_marbl_3d_sf_diags+n_marbl_3d_it_diags)
+     &        ,' in bgc_ecosys_vars.F and recompile'
          error stop 'ERROR reported from MARBL library'
       end if
 !     ...  end of check
