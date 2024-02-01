@@ -18,9 +18,16 @@ ln -s code/roms .
 ## Check which BGC engine we're using                                                                                                                                                                                                                                                              
 if grep -q "\!\# define BIOLOGY_BEC2" code/cppdefs.opt;
 then
-    PREFIX=MARBL
-else
-    PREFIX=BEC
+    if grep -q "\!\# define MARBL\b" code/cppdefs.opt;
+    then
+	PREFIX=NOBGC # No biology
+    elif grep -q "\# define MARBL\b" code/cppdefs.opt;
+    then
+	 PREFIX=MARBL # BGC with MARBL
+    fi
+elif grep -q "\# define BIOLOGY_BEC2" code/cppdefs.opt;
+then
+    PREFIX=BEC # BGC with BEC
 fi
 
 # Split the initial and boundary conditions for use on multiple CPUs (default 8)
@@ -31,6 +38,9 @@ for X in {\
 roms_bry_2012.nc,roms_bry_bgc_"${PREFIX}".nc,roms_frc.201112.nc,\
 roms_frc.201201.nc,roms_frc_bgc.nc,roms_grd.nc,\
 roms_ini_"${PREFIX}".nc};do
+
+    if [ "${X}" = "roms_bry_bgc_NOBGC.nc" ];then continue;fi
+    
     if [ -e PARTED/"${X/.nc}".0.nc ];then
 	echo "INPUT/${X} appears to have already been partitioned. Continuing."
 	continue
@@ -50,7 +60,7 @@ echo "########################################################################"
 if [ ! -d RST ];then mkdir RST;fi
 cp ${PREFIX}_rst.*.?.nc RST/
 
-for X in ${PREFIX}_{rst,his,bgc}.*.0.nc; do
+for X in ${PREFIX}_???.*.0.nc; do
     ncjoin ${X/.0.nc}.?.nc
     if [ -e ${X/.0.nc}.nc ]; then
 	rm ${X/.0.nc}.?.nc

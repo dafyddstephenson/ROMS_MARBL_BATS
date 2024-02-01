@@ -542,8 +542,12 @@ c--#define VERBOSE
 !     &              trim(ininame)
 !               goto 99             !--> ERROR
 !            endif
-         else
-            bec2_diag_3d(GLOBAL_2D_ARRAY,1,itrc) = 0.0
+        else
+
+!     20240130 - commented this line as it seems an improper initialisation. Also seems to happen for t?
+!          bec2_diag_3d(GLOBAL_2D_ARRAY,1,itrc) = 0.0
+           bec2_diag_3d(GLOBAL_2D_ARRAY,:,itrc) = 0.0
+           
             mpi_master_only write(*,*) ' --- WARNING: '
      &         , trim(vname_bec2_diag_3d(1,itrc))
      &         , ' not in initial file.  Initialized to 0.0'
@@ -590,7 +594,7 @@ c--#define VERBOSE
            call exchange_tile(1,nx,1,ny,
      &          marbl_saved_state_3d(START_2D_ARRAY,1,itrc),N)
          else
-            marbl_saved_state_3d(GLOBAL_2D_ARRAY,1,itrc) = 0.0
+            marbl_saved_state_3d(GLOBAL_2D_ARRAY,:,itrc) = 0.0 ! Note ':' instead of '1' as in similar blocks
             mpi_master_only write(*,*) ' --- WARNING: '
      &         , trim(vname_marbl_ss_3d(1,itrc))
      &         , ' not in initial file.  Initialized to 0.0'

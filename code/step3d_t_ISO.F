@@ -1067,6 +1067,7 @@ c??         enddo
       if (mynode==0) then
       print *, 'doing BGC with MARBL'
       end if
+      
       call marbldrv_column_physics(istr,iend,jstr,jend,
      &     t(istr:iend,jstr:jend,:,:,:)
 #ifdef MARBL_DIAGS      

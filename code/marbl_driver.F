@@ -12,7 +12,7 @@
       use bgc_forces, only: pco2air,pco2air_alt,dust,iron
       use surf_flux,  only : srflx
       use nc_read_write
-      use scalars,    only : nstp,nnew,dt
+      use scalars,    only : nstp,nnew,dt,iic,ntstart
 #ifdef NOX_FORCING
       use bgc_forces, only: nox
 #endif
@@ -431,7 +431,8 @@
       end do
 
 
-      if (mynode==printnode) print *, 'MARBL INTERIOR TENDENCY DIAGNOSTICS'
+      if (mynode==printnode) print *,
+     &     'MARBL INTERIOR TENDENCY DIAGNOSTICS'
       do m=1,size(MARBL_instance%interior_tendency_diags%diags)
          n_marbl_diags=n_marbl_diags+1
          if (trim(MARBL_instance%interior_tendency_diags%diags(m)%vertical_grid) .eq. "none") then ! 2D field
@@ -505,11 +506,12 @@
 
       integer :: i,j,k,m
       integer :: nt_marbl ! number of marbl tracers
-      logical :: sf_verb = .true. ! Print example SF values to stdout during loop
+      logical :: sf_verb = .false. ! Print example SF values to stdout during loop
       integer :: tmpind ! a placeholder index for lazy code copypaste
       tmpind = 0
       
       nt_marbl=size(marbl_instance%tracer_metadata)
+!     print *,'istr=',istr,',iend=',iend,'. jstr=',jstr,', jend=',jend
 
       do j=jstr,jend
          do i=istr,iend
@@ -530,7 +532,7 @@
             if (sst_ind > 0) then
                marbl_instance%surface_flux_forcings(sst_ind)%field_0d(1)
      &              =tracer_array(i,j,nz,nnew,itemp)
-               call sf_test_print(sst_ind,i,j)
+               if (sf_verb) call sf_test_print(sst_ind,i,j)
             end if
 !     -------------------------------------------------------------------------------- ifrac
 !     (unitless) - NO ICE IN ROMS SO SET TO 0
@@ -659,6 +661,8 @@
                MARBL_instance%surface_flux_saved_state%state(m)%field_2d(1)
      &              =marbl_ss_2d(i,j,m) !0.
 
+
+               
                if ( (i==printi) .and. (j==printj)
      &              .and. (mynode==printnode) .and. (sf_verb) ) then
                   print *, 'We just set surface ',
@@ -677,12 +681,14 @@
 !     ################################################################################
 !     CALL SURFACE_FLUX_COMPUTE()
 
-            if ( (mynode==printnode) .and. (j==printj) .and. (i==printi) ) then
+            if ( (mynode==printnode) .and. (sf_verb) .and.
+     &           (j==printj) .and. (i==printi)) then
                print *, "calling surface flux compute..."
             end if
             
             call marbl_instance%surface_flux_compute()
-            if ( (mynode==printnode) .and. (j==printj) .and. (i==printi) ) then
+            if ( (mynode==printnode) .and. (sf_verb) .and.
+     &           (j==printj) .and. (i==printi) ) then
                print *, "calling surface flux compute... done"
             end if
 
@@ -883,7 +889,26 @@
 !                  end if
                
                MARBL_instance%interior_tendency_saved_state%state(m)%field_3d(:,1)
-     &                    =marbl_ss_3d(i,j,nz:1:-1,m) !0.
+     &              =marbl_ss_3d(i,j,nz:1:-1,m) !0.
+!     if ((m==1) .and. (iic==4854)) then
+!               if ((m==1) .and. (mynode==0) .and.
+!     &              (i==4) .and. (j==4)) then
+!                  print *,'STEP=',iic
+!     &                 ,',i=',i,',j=',j,',mynode=',mynode!,',MAX '
+!     &                 ,trim(MARBL_instance%interior_tendency_saved_state%state(m)%long_name)
+!     &                 ,': '
+!     &                 ,(MARBL_instance%interior_tendency_saved_state%state(m)%field_3d(:,1))               
+!     &                 ,maxval(MARBL_instance%interior_tendency_saved_state%state(m)%field_3d(:,1))
+!               end if
+!               if (m==1) then
+!                  print *,'STEP=',iic
+!     &                 ,',i=',i,',j=',j,',mynode=',mynode,',MIN '
+!     &                 ,trim(MARBL_instance%interior_tendency_saved_state%state(m)%long_name)
+!     &                 ,': '
+!     &                 ,(MARBL_instance%interior_tendency_saved_state%state(m)%field_3d(:,1))               
+!     &                 ,minval(MARBL_instance%interior_tendency_saved_state%state(m)%field_3d(:,1))
+!               end if
+
                
                if ( (i==printi) .and. (j==printj)
      &              .and. (mynode==printnode) .and. (sf_verb) ) then
