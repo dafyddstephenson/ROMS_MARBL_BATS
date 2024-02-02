@@ -20,6 +20,7 @@
  /* IBCs */
 # define BULK_FRC
 # define EXACT_RESTART
+# define SPONGE
 
 /* Mixing stuff */
 # define UV_VIS2
@@ -37,7 +38,16 @@
 # define SPLIT_EOS
 !# define LIN_RHO_EOS
 
+/* Tides */
+# define TIDES
+
         /* Mixing */
+# define LMD_MIXING
+# define LMD_KPP
+# define LMD_BKPP
+# define LMD_RIMIX
+# define LMD_CONVEC
+# define LMD_NONLOCAL
         /*        - lateral */
 
         /*        - vertical */
@@ -84,4 +94,3 @@
 #endif /* ROMS_MARBL_BATS */
 
 #include "set_global_definitions.h"
-
