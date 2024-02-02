@@ -285,27 +285,27 @@
          end if
       end do
 ! ... so we can check if it matches the number allocated by ROMS ...
-      if ( size(vname_bec2_diag_2d(1,:)) .ne.
+      if ( size(vname_bec2_diag_2d(1,:)) .neqv.
      &     (n_marbl_2d_sf_diags+n_marbl_2d_it_diags) ) then
          write(*,'(7x,A,I4,A,I4,A,I4,A)')
      &        'ERROR: Allocated no. of 2D BGC diagnostics: '
-     &        ,size(vname_bec2_diag_2d(1,:)
+     &        ,size(vname_bec2_diag_2d(1,:))
      &        ,' does not match no. expected by MARBL: '
      &        ,(n_marbl_2d_sf_diags+n_marbl_2d_it_diags)
      &        ,'. Set nr_bec2_diag_2d = '
-     &        (n_marbl_2d_sf_diags+n_marbl_2d_it_diags)
-     &        ' in bgc_ecosys_vars.F and recompile'
+     &        ,(n_marbl_2d_sf_diags+n_marbl_2d_it_diags)
+     &        ,' in bgc_ecosys_vars.F and recompile'
          error stop 'ERROR reported from MARBL library'
-      elseif ( size(vname_bec2_diag_3d(1,:)) .ne.
+      elseif ( size(vname_bec2_diag_3d(1,:)) .neqv.
      &        (n_marbl_3d_sf_diags+n_marbl_3d_it_diags) ) then
          write(*,'(7x,A,I4,A,I4,A,I4,A)')
      &        'ERROR: Allocated no. of 3D BGC diagnostics: '
-     &        ,size(vname_bec2_diag_3d(1,:)
+     &        ,size(vname_bec2_diag_3d(1,:))
      &        ,' does not match no. expected by MARBL: '
      &        ,(n_marbl_3d_sf_diags+n_marbl_3d_it_diags)
      &        ,'. Set nr_bec2_diag_3d = '
-     &        (n_marbl_3d_sf_diags+n_marbl_3d_it_diags)
-     &        ' in bgc_ecosys_vars.F and recompile'
+     &        ,(n_marbl_3d_sf_diags+n_marbl_3d_it_diags)
+     &        ,' in bgc_ecosys_vars.F and recompile'
          error stop 'ERROR reported from MARBL library'
       end if
 !     ...  end of check
