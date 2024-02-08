@@ -59,11 +59,12 @@ c--# define CONST_TRACERS
       use surf_flux, only: stflx, srflx
       use tracers
 #ifdef MARBL      
-      use marbl_driver, only: marbldrv_column_physics ! 20231023
-      use bgc_ecosys_vars, only: landmask !20240106
-#ifdef MARBL_DIAGS      
-      use bgc_ecosys_vars, only: bec2_diag_2d, bec2_diag_3d !20231211
-#endif
+      use marbl_driver, only: marbldrv_column_physics,marbl_saved_state_2d,marbl_saved_state_3d
+      use bgc_ecosys_vars, only: landmask
+#ifdef MARBL_DIAGS            
+      use bgc_ecosys_vars, only: bec2_diag_2d, bec2_diag_3d
+#endif      
+!2023211
 #endif      
       use diagnostics
       use eos_vars
@@ -1067,13 +1068,16 @@ c??         enddo
       if (mynode==0) then
       print *, 'doing BGC with MARBL'
       end if
+      
       call marbldrv_column_physics(istr,iend,jstr,jend,
      &     t(istr:iend,jstr:jend,:,:,:)
      &     ,landmask(istr:iend,jstr:jend)
 #ifdef MARBL_DIAGS      
      &     ,bec2_diag_2d(istr:iend,jstr:jend,:)
      &     ,bec2_diag_3d(istr:iend,jstr:jend,:,:)
-#endif      
+#endif
+     &     ,marbl_saved_state_2d(istr:iend,jstr:jend,:)
+     &     ,marbl_saved_state_3d(istr:iend,jstr:jend,:,:)
      &     )                    !MARBL, 2023
 # elif defined(BIOLOGY_BEC2)
       if (mynode==0) then
