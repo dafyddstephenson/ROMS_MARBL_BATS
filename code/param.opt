@@ -24,10 +24,13 @@
       integer, parameter :: NSUB_X = 1, NSUB_E = 1
 
       ! Defining number of tracers
-      integer, parameter :: ntrc_pas=0
+      integer, parameter :: ntrc_pas=0      
 # ifdef BIOLOGY_BEC2
      &       ,  ntrc_bio_base=26
      &       ,  ntrc_bio=26
+# elif defined MARBL
+     &       , ntrc_bio_base=37
+     &       , ntrc_bio=37
 # else
      &       , ntrc_bio_base=0
      &       , ntrc_bio=0
@@ -38,12 +41,6 @@
      &       , ntrc_salt=0
 #endif
 
-      !integer, parameter :: nt=1+ntrc_pas+ntrc_bio+ntrc_salt
-#ifdef MARBL      
-      integer, parameter :: nt = 34 ! 32 MARBL tracers  + T + S
-#else
       integer, parameter :: nt=1+ntrc_pas+ntrc_bio+ntrc_salt
-#endif   		 
-      !integer, parameter :: nt = 2 
     
       

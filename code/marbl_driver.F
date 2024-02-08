@@ -1,7 +1,7 @@
 #include "cppdefs.opt"
 #ifdef MARBL
       module marbl_driver
-      use param, only: mynode,nt,isalt,itemp,Lm,Mm
+      use param, only: mynode,nt,ntrc_bio,isalt,itemp,Lm,Mm
       use marbl_interface, only: marbl_interface_class
 #ifdef MARBL_DIAGS
       use MARBL_interface_public_types, only: marbl_diagnostics_type,
@@ -24,6 +24,7 @@
       implicit none
 
       type(MARBL_interface_class) :: marbl_instance
+      integer :: nt_marbl ! number of marbl tracers      
       integer :: idx
 
 !     The below are from the MOM driver, will decide if we can do things differently later
@@ -63,14 +64,71 @@
 !      type(marbl_interface_class), intent(inout) :: marbl_instance
       character*42, dimension(nt), intent(inout) :: t_vname, t_units
       character*60, dimension(nt), intent(inout) :: t_lname
-      character*47, dimension(nt), intent(inout) :: t_tname      
+      character*47, dimension(nt), intent(inout) :: t_tname
+      character(len=256)                         :: namelist_line!(1)
       integer                    , intent(inout) :: itot
       integer , dimension(nt)    , intent(inout) :: t_ana_frc
       logical , dimension(nt)    , intent(inout) :: wrt_t, wrt_t_avg
       real    , dimension(nz)                    :: dummy_array
-
+      integer :: marbl_settings_in, read_status
+      
       dummy_array(:)=1.0        ! Temporary measure until we can access an allocated Hz,z_w,z_r
+      marbl_settings_in = 111
+      
+!     *** TRY TO OPEN NAMELIST FILE ***
+      if (mynode>=0) then ! In MOM would be ==0 but this relies on "broadcast" (see below)
+     ! read the marbl_in into buffer
+         open(unit=marbl_settings_in, file='marbl_in', iostat=read_status)
+         if (read_status .ne. 0) then !can't find namelist file, skip
 
+            write(*, '(A, I0, 3A)') "IO WARNING ", read_status,
+     &           "could not open namelist file : ", "marbl_in",
+     &           ". attempting to proceed with default MARBL settings"
+            
+         else                   ! can find namelist file, read
+!     *** READ NAMELIST FILE ***
+            namelist_line = ''
+            do                  !namelist line-by-line read
+               read(marbl_settings_in,"(A)",iostat=read_status),
+     &              namelist_line
+!     MOM driver here calls `broadcast` to send info to other CPUs.
+!     $CESM_ROOT/components/mom/MOM6/config_src/infra/FMS2/MOM_coms_infra.F90 > broadcast
+                  
+!     This in turn uses `mpp_broadcast`:
+!     $CESM_ROOT/libraries/FMS/src/mpp/mpp.F90
+                  
+!     TODO: What is the ROMS equivalent?
+!     ( It's "MPI_Bcast" )
+               if (read_status .ne. 0) then
+                  exit !loop
+               else
+                  call marbl_instance%put_setting(namelist_line)
+                  if (mynode==0) print *,'marbl_in: ',namelist_line
+               end if
+               
+            end do              ! namelist line-by-line read
+
+            if (is_iostat_end(read_status)) then
+               if (mynode==0) then
+                  write(*, '(3A)') "Successfully read ","marbl_in",
+     &                 " to end of file"
+               end if
+            else
+               if (mynode==0) then
+                  write(*, '(A, I0, 2A)') "IO ERROR ", read_status,
+     &                 " : ERROR reading MARBL namelist file  ",
+     &                 "marbl_in"
+               end if
+               error stop
+            end if
+         
+            close(marbl_settings_in)
+            print *, 'we successfully read and closed the file'
+         endif
+      endif
+      print *, 'moving on'
+!     * Now we have the settings read in, generate the marbl instance:
+      
       call marbl_instance%init(gcm_num_levels=nz,
      &     gcm_num_PAR_subcols = 1,
      &     gcm_num_elements_surface_flux = 1,
@@ -80,79 +138,26 @@
      &     lgcm_has_global_ops = .true.,
      &     unit_system_opt='mks')
 
+      nt_marbl=size(marbl_instance%tracer_metadata)
+      
+!     20240124 - add a check that the number of tracers in MARBL_instance is NT:
+      if ( nt_marbl .ne. ntrc_bio ) then
+         write(*,'(7x,A,I4,A,I4,A,I4,A)')
+     &        'ERROR: Allocated no. of MARBL tracers'
+     &        ,ntrc_bio
+     &        ,' does not match no. expected by MARBL: '
+     &        ,nt_marbl
+     &        ,' set ntrc_bio = ',nt_marbl
+     &        ,' in param.opt and recompile'
+         error stop 'ERROR reported from MARBL library'
+      end if      
+!     /20240124    
         
       call print_marbl_log(marbl_instance%StatusLog)
       call marbl_instance%StatusLog%erase()
-        
-      do idx=1,size(marbl_instance%tracer_metadata)         
-         itot=itot+1
-         select case (trim(marbl_instance%tracer_metadata(idx)%short_name))
-         case('PO4')            ! Phosphate
-            iPO4     = itot
-         case('NO3')            ! Nitrate
-            iNO3     = itot
-         case('SiO3')           ! Silicate
-            iSIO3    = itot
-         case('NH4')            ! Ammonium
-            iNH4     = itot
-         case('Fe')             ! Iron
-            iFE      = itot
-         case('O2')             ! Oxygen
-            iO2      = itot
-         case('DIC')            ! Dissolved inorganic carbon
-            iDIC     = itot
-         case('ALK')            ! Alkalinity
-            iALK     = itot
-         case('DOC')            ! Dissolved organic carbon
-            iDOC     = itot
-         case('DON')            ! Dissolved organic nitrogen
-            iDON     = itot
-         case('DOP')            ! Dissolved organic phosphorous
-            iDOP     = itot
-         case('DOPr')           ! Refractory dissolved organic phosphorous
-            iDOPR    = itot 
-         case('DONr')           ! Refractory dissolved organic nitrogen
-            iDONR    = itot
-         case('zooC')           ! Zooplankton
-            iZOOC    = itot
-         case('spChl')          ! Small phytoplankton chlorophyll
-            iSPCHL   = itot
-         case('spC')            ! Small plankton carbon
-            iSPC     = itot
-         case('spFe')           ! Small plankton iron
-            iSPFE    = itot
-         case('spCaCO3')        ! Small plankton calcium carbonate
-            iSPCACO3 = itot
-         case('diatChl')        ! Diatom chlorophyll
-            iDIATCHL = itot
-         case('diatC')          ! Diatom carbon
-            iDIATC   = itot
-         case('diatFe')         ! Diatom iron
-            iDIATFE  = itot
-         case('diatSi')         ! Diatom Silicon
-            iDIATSI  = itot
-         case('diazChl')        ! Diazotroph chlorophyll
-            iDIAZCHL = itot
-         case('diazC')          ! Diazotroph carbon
-            iDIAZC   = itot
-         case('diazFe')         ! Diazotroph iron
-            iDIAZFE  = itot
-            ! THE FOLLOWING TRACERS ARE IN MARBL BUT NOT BEC
-         !case('Lig')            ! 
-         !case('spP')            ! Small plankton phosphorous                        
-         !case('DOCr')           ! Refractory dissolved organic carbon
-         !case('DIC_ALT_CO2')    ! Alternative CO2 forcing DIC tracer
-         !case('ALK_ALT_CO2')    ! Alternative CO2 forcing alkalinity tracer
-         !case('diatP')          ! Diatom phosphorous
-         !case('diazP')          ! Diazotroph phosphorous
-         case default
-            if (mynode==printnode) then
-               print *, 'Receiving non-BEC tracer: ',
-     &              (trim(marbl_instance%tracer_metadata(idx)%short_name))
-            end if
-            !cycle
-         end select
-         
+
+      do idx=1,nt_marbl
+         itot=itot+1         
          t_vname(itot)=trim(marbl_instance%tracer_metadata(idx)%short_name)
          t_lname(itot)=trim(marbl_instance%tracer_metadata(idx)%long_name)
          t_units(itot)=trim(marbl_instance%tracer_metadata(idx)%units)
@@ -212,7 +217,9 @@
          case('xco2_alt_co2')
             xco2_alt_ind = idx
          case DEFAULT
-            print *, 'default'
+            print *, 'Additional forcing requested but not indexed: ',
+     &           trim(MARBL_instance%surface_flux_forcings(idx)
+     &           %metadata%varname)
          end select
       enddo
 
@@ -251,7 +258,9 @@
          case('Particulate Remin Scale Factor')
             remin_scalef_ind = idx
          case DEFAULT
-            print *,'default'
+            print *, 'Additional forcing requested but not indexed: ',
+     &           trim(MARBL_instance%interior_tendency_forcings(idx)
+     &           %metadata%varname)
          end select
       enddo
 
@@ -402,10 +411,54 @@
       if (mynode==printnode)  print *, 'MARBL SURFACE FLUX DIAGNOSTICS'
       do m=1,size(MARBL_instance%surface_flux_diags%diags)
          n_marbl_diags=n_marbl_diags+1
-         if (trim(MARBL_instance%surface_flux_diags%diags(m)%vertical_grid) .eq. "none") then ! 2D field
+         if (trim(MARBL_instance%surface_flux_diags%diags(m)
+     &        %vertical_grid) .eq. "none") then ! 2D field
             n_marbl_2d_sf_diags=n_marbl_2d_sf_diags+1
-            
-            vname_bec2_diag_2d(1,diagidx2d)=
+         else
+            n_marbl_3d_sf_diags=n_marbl_3d_sf_diags+1
+         end if
+      end do
+      do m=1,size(MARBL_instance%interior_tendency_diags%diags)
+         n_marbl_diags=n_marbl_diags+1
+         if (trim(MARBL_instance%interior_tendency_diags%diags(m)
+     &        %vertical_grid) .eq. "none") then ! 2D field
+            n_marbl_2d_it_diags=n_marbl_2d_it_diags+1
+         else
+            n_marbl_3d_it_diags=n_marbl_3d_it_diags+1
+         end if
+      end do
+! ... so we can check if it matches the number allocated by ROMS ...
+      if ( size(vname_bec2_diag_2d(1,:)) .ne.
+     &     (n_marbl_2d_sf_diags+n_marbl_2d_it_diags) ) then
+         write(*,'(7x,A,I4,A,I4,A,I4,A)')
+     &        'ERROR: Allocated no. of 2D BGC diagnostics: '
+     &        ,size(vname_bec2_diag_2d(1,:))
+     &        ,' does not match no. expected by MARBL: '
+     &        ,(n_marbl_2d_sf_diags+n_marbl_2d_it_diags)
+     &        ,'. Set nr_bec2_diag_2d = '
+     &        ,(n_marbl_2d_sf_diags+n_marbl_2d_it_diags)
+     &        ,' in bgc_ecosys_vars.F and recompile'
+         error stop 'ERROR reported from MARBL library'
+      elseif ( size(vname_bec2_diag_3d(1,:)) .ne.
+     &        (n_marbl_3d_sf_diags+n_marbl_3d_it_diags) ) then
+         write(*,'(7x,A,I4,A,I4,A,I4,A)')
+     &        'ERROR: Allocated no. of 3D BGC diagnostics: '
+     &        ,size(vname_bec2_diag_3d(1,:))
+     &        ,' does not match no. expected by MARBL: '
+     &        ,(n_marbl_3d_sf_diags+n_marbl_3d_it_diags)
+     &        ,'. Set nr_bec2_diag_3d = '
+     &        ,(n_marbl_3d_sf_diags+n_marbl_3d_it_diags)
+     &        ,' in bgc_ecosys_vars.F and recompile'
+         error stop 'ERROR reported from MARBL library'
+      end if
+!     ...  end of check
+! NOTE: need to set these values in an opt file or elsewhere but not bgc_ecosys_vars
+      
+!     Populate BGC diagnostics metadata arrays in ROMS using MARBL
+      if (mynode==printnode)  print *, 'MARBL SURFACE FLUX DIAGNOSTICS'
+      do m=1,size(MARBL_instance%surface_flux_diags%diags)
+         if (trim(MARBL_instance%surface_flux_diags%diags(m)%vertical_grid) .eq. "none") then ! 2D field
+            vname_bec2_diag_2d(1,idx2d)=
      &           trim(MARBL_instance%surface_flux_diags%diags(m)%short_name)
             vname_bec2_diag_2d(2,diagidx2d)=
      &           trim(MARBL_instance%surface_flux_diags%diags(m)%long_name)
@@ -417,8 +470,6 @@
             diagidx2d=diagidx2d+1
          else                   ! 3D field
             ! There are no 3D surface flux diags, this is for generalisation purposes
-            n_marbl_3d_sf_diags=n_marbl_3d_sf_diags+1
-
             vname_bec2_diag_3d(1,diagidx3d)=
      &           trim(MARBL_instance%surface_flux_diags%diags(m)%short_name)
             vname_bec2_diag_3d(2,diagidx3d)=
@@ -432,14 +483,10 @@
          end if
       end do
 
-
       if (mynode==printnode) print *,
      &     'MARBL INTERIOR TENDENCY DIAGNOSTICS'
       do m=1,size(MARBL_instance%interior_tendency_diags%diags)
-         n_marbl_diags=n_marbl_diags+1
          if (trim(MARBL_instance%interior_tendency_diags%diags(m)%vertical_grid) .eq. "none") then ! 2D field
-            n_marbl_2d_it_diags=n_marbl_2d_it_diags+1
-
             vname_bec2_diag_2d(1,diagidx2d)=
      &           trim(MARBL_instance%interior_tendency_diags%diags(m)%short_name)
             vname_bec2_diag_2d(2,diagidx2d)=
@@ -451,7 +498,6 @@
 
             diagidx2d=diagidx2d+1
          else                   ! 3D field
-            n_marbl_3d_it_diags=n_marbl_3d_it_diags+1
 
             vname_bec2_diag_3d(1,diagidx3d)=
      &           trim(MARBL_instance%interior_tendency_diags%diags(m)%short_name)
@@ -509,13 +555,9 @@
       real, dimension(:,:,:,:),intent(inout) :: marbl_ss_3d
 
       integer :: i,j,k,m
-      integer :: nt_marbl ! number of marbl tracers
       logical :: sf_verb = .false. ! Print example SF values to stdout during loop
       integer :: tmpind ! a placeholder index for lazy code copypaste
       tmpind = 0
-      
-      nt_marbl=size(marbl_instance%tracer_metadata)
-!     print *,'istr=',istr,',iend=',iend,'. jstr=',jstr,', jend=',jend
 
       do j=jstr,jend
          do i=istr,iend
@@ -564,9 +606,7 @@
             if (atmpress_ind > 0) then
             marbl_instance%surface_flux_forcings(atmpress_ind)%field_0d(1)=1.
 !     &              press(i,j)
-            if (sf_verb) call sf_test_print(atmpress_ind,i,j)
-
-            
+            if (sf_verb) call sf_test_print(atmpress_ind,i,j)            
             end if 
 !     -------------------------------------------------------------------------------- pco2
 !     (MARBL: ppmv; ROMS: ppm)
@@ -598,7 +638,7 @@
                marbl_instance%surface_flux_forcings(fe_dep_ind)%field_0d(1)=
      &              iron(i,j)*0.01 ! nmol/cm2/s -> mmol/m2/s
                if (sf_verb) call sf_test_print(fe_dep_ind,i,j)
-            end if               
+            end if
 !     -------------------------------------------------------------------------------- nox !!!
 !     (MARBL: mmol/m^2/s; ROMS: kg/m^2/s)
 !     X,Y => any number of oxygen/hydrogen
@@ -788,44 +828,20 @@
             if (potemp_ind > 0) then
                MARBL_instance%interior_tendency_forcings(potemp_ind)%field_1d(1,:)
      &              =tracer_array(i,j,nz:1:-1,nnew,itemp)
-
-               tmpind=potemp_ind
-               if ( (sf_verb) .and. (mynode==printnode) .and.
-     &              (i==printi) .and. (j==printj)) then
-                  print *, 'We just set bottom ',
-     &                 trim(MARBL_instance%interior_tendency_forcings(tmpind)%metadata%varname),
-     &                 MARBL_instance%interior_tendency_forcings(tmpind)%field_1d(1,nz),
-     &                 trim(MARBL_instance%interior_tendency_forcings(tmpind)%metadata%field_units)
-               end if               
+               if (sf_verb) call if_test_print(potemp_ind,i,j)
             end if
 !     -------------------------------------------------------------------------------- FLIP
             if (salinity_ind > 0) then
                MARBL_instance%interior_tendency_forcings(salinity_ind)%field_1d(1,:)
      &              =tracer_array(i,j,nz:1:-1,nnew,isalt)
-               tmpind=salinity_ind
-               if ( (sf_verb) .and. (mynode==printnode) .and.
-     &              (i==printi) .and. (j==printj)) then
-                  print *, 'We just set bottom ',
-     &                 trim(MARBL_instance%interior_tendency_forcings(tmpind)%metadata%varname),
-     &                 MARBL_instance%interior_tendency_forcings(tmpind)%field_1d(1,nz),
-     &                 trim(MARBL_instance%interior_tendency_forcings(tmpind)%metadata%field_units)
-               end if               
+               if (sf_verb) call if_test_print(salinity_ind,i,j)               
             end if
 !     -------------------------------------------------------------------------------- FLIP
             if (pressure_ind > 0) then
                MARBL_instance%interior_tendency_forcings(pressure_ind)%field_1d(1,:)=
      &              -z_r(i,j,nz:1:-1)*0.1
 !     &              =p(i,j,nz:1:-1)
-
-               tmpind=pressure_ind
-               if ( (sf_verb) .and. (mynode==printnode) .and.
-     &              (i==printi) .and. (j==printj)) then
-                  print *, 'We just set bottom ',
-     &                 trim(MARBL_instance%interior_tendency_forcings(tmpind)%metadata%varname),
-     &                 MARBL_instance%interior_tendency_forcings(tmpind)%field_1d(1,nz),
-     &                 trim(MARBL_instance%interior_tendency_forcings(tmpind)%metadata%field_units)
-               end if
-               ! Seems to be defined in "diagnostics" which means we can't use due to CD
+               if (sf_verb) call if_test_print(pressure_ind,i,j)
             end if
 !     -------------------------------------------------------------------------------- 
 !     This is based on a 1/60* bathymetry dataset, a sort of subgrid-scale way of putting
@@ -836,16 +852,7 @@
             
             if (fesedflux_ind > 0) then
                MARBL_instance%interior_tendency_forcings(fesedflux_ind)%field_1d(1,:)=0.
-
-               tmpind=fesedflux_ind
-               if ( (sf_verb) .and. (mynode==printnode) .and.
-     &              (i==printi) .and. (j==printj)) then
-                  print *, 'We just set bottom ',
-     &                 trim(MARBL_instance%interior_tendency_forcings(tmpind)%metadata%varname),
-     &                 MARBL_instance%interior_tendency_forcings(tmpind)%field_1d(1,nz),
-     &                 trim(MARBL_instance%interior_tendency_forcings(tmpind)%metadata%field_units)
-               end if
-               
+               if (sf_verb) call if_test_print(fesedflux_ind,i,j)
             end if
 !     --------------------------------------------------------------------------------
 !     o2_scalef_ind and remin_scalef_ind  are to deal with OMZs in CESM2 and aren't set here
@@ -1093,9 +1100,9 @@
       if (j==printj) then
          if (i==printi) then
             if (mynode==printnode) then
-               print *, 'We just set ',
+               print *, 'We just set bottom ',
      &              (trim(MARBL_instance%interior_tendency_forcings(ind)%metadata%varname)),
-     &              ' as ',marbl_instance%interior_tendency_forcings(ind)%field_1d(1,:)
+     &              ' as ',marbl_instance%interior_tendency_forcings(ind)%field_1d(1,nz)
             end if                     
          end if
       end if                              
